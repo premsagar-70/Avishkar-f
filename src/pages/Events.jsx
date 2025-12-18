@@ -19,7 +19,9 @@ const Events = () => {
         const fetchEvents = async () => {
             try {
                 const response = await api.get('/events');
-                setEvents(response.data);
+                // Only show active/approved events, filter out completed/archived ones
+                const activeEvents = response.data.filter(e => e.status === 'approved');
+                setEvents(activeEvents);
             } catch (error) {
                 console.error("Failed to fetch events", error);
             } finally {
