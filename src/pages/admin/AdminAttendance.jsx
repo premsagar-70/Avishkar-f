@@ -62,7 +62,7 @@ const AdminAttendance = () => {
         <div className="min-h-screen bg-gray-100 py-8 px-4 sm:px-6 lg:px-8">
             <div className="max-w-3xl mx-auto">
                 <div className="mb-6">
-                    <Link to="/organizer" className="flex items-center text-gray-600 hover:text-gray-900 transition-colors">
+                    <Link to="/admin" className="flex items-center text-gray-600 hover:text-gray-900 transition-colors">
                         <ArrowLeft size={20} className="mr-2" /> Back to Dashboard
                     </Link>
                 </div>
