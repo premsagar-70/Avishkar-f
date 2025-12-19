@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '../firebase';
-import { useAuth } from '../context/AuthContext';
+import { auth } from '../../firebase';
+import { useAuth } from '../../context/AuthContext';
 import { Mail, Lock, ArrowRight, ArrowLeft, Quote } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
@@ -16,6 +16,16 @@ const Login = () => {
     const from = location.state?.from?.pathname || null;
     const showModalOnReturn = location.state?.showModalOnReturn || false;
     const { signInWithGoogle } = useAuth();
+
+    // Rotating Quotes Logic
+    const quotes = [
+        "Technology is best when it brings people together.",
+        // "Innovation distinguishes between a leader and a follower.",
+        "The future belongs to those who believe in the beauty of their dreams.",
+        // "Code is like humor. When you have to explain it, it’s bad.",
+    ];
+    // Select a random quote index once on mount
+    const [currentQuoteIndex] = useState(Math.floor(Math.random() * quotes.length));
 
     const handleEmailLogin = async (e) => {
         e.preventDefault();
@@ -92,8 +102,8 @@ const Login = () => {
     };
 
     return (
-        <div className="min-h-screen relative flex items-center justify-end bg-cover bg-center overflow-hidden"
-            style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1519389950473-47ba0277781c?q=80&w=2070&auto=format&fit=crop")' }}>
+        <div className="min-h-screen relative flex items-center justify-center lg:justify-end bg-cover bg-no-repeat bg-fixed"
+            style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1519389950473-47ba0277781c?q=80&w=2070&auto=format&fit=crop")', backgroundPosition: 'center' }}>
 
             {/* Overlay with gradient */}
             <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-black/30 backdrop-blur-[3px]"></div>
@@ -112,9 +122,16 @@ const Login = () => {
                     transition={{ delay: 0.5, duration: 0.8 }}
                 >
                     <Quote size={48} className="text-blue-400 mb-4 opacity-80" />
-                    <blockquote className="text-3xl font-light leading-relaxed mb-6">
-                        "Technology is best when it brings people together. Welcome back to the community."
-                    </blockquote>
+                    <motion.blockquote
+                        key={currentQuoteIndex}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        transition={{ duration: 0.5 }}
+                        className="text-3xl font-light leading-relaxed mb-6 min-h-[120px]"
+                    >
+                        "{quotes[currentQuoteIndex]}"
+                    </motion.blockquote>
                     <div className="flex items-center gap-4">
                         <div className="w-12 h-1 bg-blue-500 rounded-full"></div>
                         <p className="text-lg font-medium text-blue-200">Aviskhar Team</p>

@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
-import { auth, db } from '../firebase';
-import { useAuth } from '../context/AuthContext';
-import { Mail, Lock, ArrowRight, ArrowLeft, Quote } from 'lucide-react';
+import { auth, db } from '../../firebase';
+import { useAuth } from '../../context/AuthContext';
+import { Mail, Lock, ArrowRight, ArrowLeft, Quote, Phone } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
 
@@ -17,6 +17,16 @@ const Register = () => {
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
     const { signInWithGoogle } = useAuth();
+
+    const quotes = [
+        "Innovation distinguishes between a leader and a follower.",
+        "The best way to predict the future is to create it.",
+        "Technology is best when it brings people together.",
+        "First, solve the problem. Then, write the code.",
+        "Simplicity is the soul of efficiency."
+    ];
+    // Select a random quote index once on mount
+    const [currentQuoteIndex] = useState(Math.floor(Math.random() * quotes.length));
 
     const handleEmailRegister = async (e) => {
         e.preventDefault();
@@ -63,8 +73,8 @@ const Register = () => {
     };
 
     return (
-        <div className="min-h-screen relative flex items-center justify-end bg-cover bg-center overflow-hidden"
-            style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1519389950473-47ba0277781c?q=80&w=2070&auto=format&fit=crop")' }}>
+        <div className="min-h-screen relative flex items-center justify-center lg:justify-end bg-cover bg-no-repeat bg-fixed"
+            style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1519389950473-47ba0277781c?q=80&w=2070&auto=format&fit=crop")', backgroundPosition: 'center' }}>
 
             {/* Overlay with gradient */}
             <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-black/30 backdrop-blur-[3px]"></div>
@@ -83,9 +93,16 @@ const Register = () => {
                     transition={{ delay: 0.5, duration: 0.8 }}
                 >
                     <Quote size={48} className="text-blue-400 mb-4 opacity-80" />
-                    <blockquote className="text-3xl font-light leading-relaxed mb-6">
-                        "Innovation distinguishes between a leader and a follower. Join us to shape the future."
-                    </blockquote>
+                    <motion.blockquote
+                        key={currentQuoteIndex}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        transition={{ duration: 0.5 }}
+                        className="text-3xl font-light leading-relaxed mb-6 min-h-[120px]"
+                    >
+                        "{quotes[currentQuoteIndex]}"
+                    </motion.blockquote>
                     <div className="flex items-center gap-4">
                         <div className="w-12 h-1 bg-blue-500 rounded-full"></div>
                         <p className="text-lg font-medium text-blue-200">Aviskhar Team</p>
@@ -100,8 +117,8 @@ const Register = () => {
                 transition={{ duration: 0.5, ease: "easeOut" }}
                 className="relative z-10 w-full max-w-md mr-0 lg:mr-20 p-4"
             >
-                <div className="bg-white/90 backdrop-blur-xl p-8 rounded-3xl shadow-2xl border border-white/20">
-                    <div className="text-center mb-8">
+                <div className="bg-white/90 backdrop-blur-xl p-5 rounded-3xl shadow-2xl border border-white/20">
+                    <div className="text-center mb-4">
                         <motion.h2
                             initial={{ opacity: 0, y: -20 }}
                             animate={{ opacity: 1, y: 0 }}
@@ -120,7 +137,7 @@ const Register = () => {
                         </motion.p>
                     </div>
 
-                    <div className="space-y-6">
+                    <div className="space-y-3">
                         <motion.button
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
@@ -141,11 +158,11 @@ const Register = () => {
                                 <div className="w-full border-t border-gray-300"></div>
                             </div>
                             <div className="relative flex justify-center text-sm">
-                                <span className="px-4 bg-white/0 text-gray-500 bg-white/90 backdrop-blur-xl rounded-full">Or sign up with email</span>
+                                <span className="px-2 bg-white/0 text-gray-500 bg-white/90 backdrop-blur-xl rounded-full">Or sign up with email</span>
                             </div>
                         </div>
 
-                        <form className="space-y-5" onSubmit={handleEmailRegister}>
+                        <form className="space-y-4" onSubmit={handleEmailRegister}>
                             <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.4 }}>
                                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Email address</label>
                                 <div className="relative">
@@ -167,7 +184,7 @@ const Register = () => {
                                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Mobile Number</label>
                                 <div className="relative">
                                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <Mail className="h-5 w-5 text-gray-400" /> {/* Reusing Mail icon for now/Phone icon is not imported yet, can fix later or use another icon if available */}
+                                        <Phone className="h-5 w-5 text-gray-400" /> {/* Reusing Mail icon for now/Phone icon is not imported yet, can fix later or use another icon if available */}
                                     </div>
                                     <input
                                         type="tel"

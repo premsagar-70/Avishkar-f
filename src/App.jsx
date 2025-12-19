@@ -3,9 +3,9 @@ import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-
 import { AuthProvider } from './context/AuthContext';
 import Navbar from './components/Navbar';
 import Home from './pages/Home';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import ForgotPassword from './pages/ForgotPassword';
+import Login from './pages/auth/Login';
+import Register from './pages/auth/Register';
+import ForgotPassword from './pages/auth/ForgotPassword';
 import Dashboard from './pages/Dashboard';
 import Events from './pages/Events';
 import NotFound from './pages/NotFound';
@@ -16,7 +16,7 @@ import Contact from './pages/Contact';
 import CustomContextMenu from './components/CustomContextMenu';
 import OrganizerDashboard from './pages/organizer/OrganizerDashboard';
 import OrganizerQRScanner from './pages/organizer/OrganizerQRScanner';
-import PendingApproval from './pages/PendingApproval';
+import PendingApproval from './pages/auth/PendingApproval';
 
 import PreviousYear from './pages/PreviousYear';
 import Profile from './pages/Profile';
