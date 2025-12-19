@@ -6,7 +6,7 @@ import { ArrowLeft, CheckCircle, XCircle, User, Mail, Calendar } from 'lucide-re
 import api from '../../services/api';
 
 const AdminAttendance = () => {
-    const { userRole } = useAuth();
+    const { userRole, currentUser } = useAuth();
     const [scannedData, setScannedData] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -39,7 +39,19 @@ const AdminAttendance = () => {
 
             // Fetch full details
             const response = await api.get(`/registrations/${parsedData.registrationId}`);
-            setScannedData(response.data);
+            const data = response.data;
+
+            // Strict Check for Organizers: specific event ownership
+            if (userRole === 'organizer') {
+                const isAssigned = data.eventAssignedTo === currentUser?.uid;
+                const isCreator = data.eventCreatedBy === currentUser?.uid;
+
+                if (!isAssigned && !isCreator) {
+                    throw new Error("This participant is registered for an event you do not manage.");
+                }
+            }
+
+            setScannedData(data);
 
         } catch (err) {
             console.error("Scan Error:", err);
