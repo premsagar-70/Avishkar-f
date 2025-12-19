@@ -6,7 +6,7 @@ import { ArrowLeft, CheckCircle, XCircle, User, Mail, Calendar } from 'lucide-re
 import api from '../../services/api';
 
 const OrganizerQRScanner = () => {
-    const { userRole } = useAuth();
+    const { userRole, currentUser } = useAuth();
     const [scannedData, setScannedData] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -39,7 +39,23 @@ const OrganizerQRScanner = () => {
 
             // Fetch full details
             const response = await api.get(`/registrations/${parsedData.registrationId}`);
-            setScannedData(response.data);
+            const data = response.data;
+
+            // Strict Check for Organizers: specific event ownership
+            if (userRole === 'organizer') {
+                if (!currentUser?.uid) {
+                    throw new Error("User authentication error. Please relogin.");
+                }
+
+                const isAssigned = data.eventAssignedTo === currentUser.uid;
+                const isCreator = data.eventCreatedBy === currentUser.uid;
+
+                if (!isAssigned && !isCreator) {
+                    throw new Error("This participant is registered for an event you do not manage.");
+                }
+            }
+
+            setScannedData(data);
 
         } catch (err) {
             console.error("Scan Error:", err);
@@ -61,6 +77,10 @@ const OrganizerQRScanner = () => {
     return (
         <div className="min-h-screen bg-gray-100 py-8 px-4 sm:px-6 lg:px-8">
             <div className="max-w-3xl mx-auto">
+                {/* <div className="mb-4 text-sm text-gray-500 flex justify-between items-center">
+                    <span>Logged in as: <strong className="capitalize">{userRole}</strong></span>
+                    <span className="text-orange-600 bg-orange-50 px-2 py-1 rounded border border-orange-200">Organizer Mode: Restricted Access</span>
+                </div> */}
                 <div className="mb-6">
                     <Link to="/organizer" className="flex items-center text-gray-600 hover:text-gray-900 transition-colors">
                         <ArrowLeft size={20} className="mr-2" /> Back to Dashboard

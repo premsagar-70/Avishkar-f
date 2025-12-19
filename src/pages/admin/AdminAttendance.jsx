@@ -41,10 +41,22 @@ const AdminAttendance = () => {
             const response = await api.get(`/registrations/${parsedData.registrationId}`);
             const data = response.data;
 
+            console.log("Scanned Data:", data);
+            console.log("Current User:", currentUser?.uid);
+            console.log("Event Assigned To:", data.eventAssignedTo);
+            console.log("Event Created By:", data.eventCreatedBy);
+
             // Strict Check for Organizers: specific event ownership
             if (userRole === 'organizer') {
-                const isAssigned = data.eventAssignedTo === currentUser?.uid;
-                const isCreator = data.eventCreatedBy === currentUser?.uid;
+                // Ensure we have a valid user ID to check against
+                if (!currentUser?.uid) {
+                    throw new Error("User authentication error. Please relogin.");
+                }
+
+                const isAssigned = data.eventAssignedTo && data.eventAssignedTo === currentUser.uid;
+                const isCreator = data.eventCreatedBy && data.eventCreatedBy === currentUser.uid;
+
+                console.log("Is Assigned:", isAssigned, "Is Creator:", isCreator);
 
                 if (!isAssigned && !isCreator) {
                     throw new Error("This participant is registered for an event you do not manage.");
@@ -73,6 +85,14 @@ const AdminAttendance = () => {
     return (
         <div className="min-h-screen bg-gray-100 py-8 px-4 sm:px-6 lg:px-8">
             <div className="max-w-3xl mx-auto">
+                <div className="mb-4 text-sm text-gray-500 flex justify-between items-center">
+                    <span>Logged in as: <strong className="capitalize">{userRole}</strong></span>
+                    {userRole === 'admin' ? (
+                        <span className="text-green-600 bg-green-50 px-2 py-1 rounded border border-green-200">Admin Mode: Full Access</span>
+                    ) : (
+                        <span className="text-orange-600 bg-orange-50 px-2 py-1 rounded border border-orange-200">Organizer Mode: Restricted Access</span>
+                    )}
+                </div>
                 <div className="mb-6">
                     <Link to="/admin" className="flex items-center text-gray-600 hover:text-gray-900 transition-colors">
                         <ArrowLeft size={20} className="mr-2" /> Back to Dashboard

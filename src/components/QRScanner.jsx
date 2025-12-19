@@ -151,12 +151,12 @@ const QRScanner = ({ onScanSuccess, onScanFailure }) => {
                 </button>
             )}
 
-            {scanResult && (
+            {/* {scanResult && (
                 <div className="mt-4 p-4 bg-green-100 text-green-800 rounded-md text-center w-full animate-fade-in-up">
                     <p className="font-bold">Scanned Code:</p>
-                    {/* <p className="break-all text-xs">{scanResult}</p> */}
+                    <p className="break-all text-xs">{scanResult}</p>
                 </div>
-            )}
+            )} */}
         </div>
     );
 };
