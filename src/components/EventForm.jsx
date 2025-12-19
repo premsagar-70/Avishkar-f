@@ -45,8 +45,16 @@ const EventForm = ({ onEventCreated, initialData = null }) => {
                 organizerEmail: initialData.organizerEmail || '',
                 organizerMobile: initialData.organizerMobile || ''
             });
+        } else if (userRole === 'organizer' && currentUser) {
+            // Pre-fill for Organizer creating their own event
+            setFormData(prev => ({
+                ...prev,
+                organizerName: currentUser.displayName || currentUser.name || '',
+                organizerEmail: currentUser.email || '',
+                organizerMobile: currentUser.phoneNumber || currentUser.mobile || ''
+            }));
         }
-    }, [initialData]);
+    }, [initialData, userRole, currentUser]);
 
     // Fetch organizers if user is admin
     React.useEffect(() => {
@@ -262,45 +270,47 @@ const EventForm = ({ onEventCreated, initialData = null }) => {
                     )}
                 </div>
 
-                {/* Organizer Contact Details */}
-                <div className="border-t pt-4 mt-4">
-                    <h3 className="text-lg font-medium text-gray-900 mb-4">Organizer Contact Details</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Display Name</label>
-                            <input
-                                type="text"
-                                name="organizerName"
-                                value={formData.organizerName}
-                                onChange={handleChange}
-                                placeholder="e.g. John Doe"
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Display Email</label>
-                            <input
-                                type="email"
-                                name="organizerEmail"
-                                value={formData.organizerEmail}
-                                onChange={handleChange}
-                                placeholder="e.g. contact@event.com"
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Display Mobile</label>
-                            <input
-                                type="tel"
-                                name="organizerMobile"
-                                value={formData.organizerMobile}
-                                onChange={handleChange}
-                                placeholder="e.g. +91 9876543210"
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2"
-                            />
+                {/* Organizer Contact Details - Show only for Admin or if explicitly needed to edit */}
+                {userRole === 'admin' && (
+                    <div className="border-t pt-4 mt-4">
+                        <h3 className="text-lg font-medium text-gray-900 mb-4">Organizer Contact Details (Admin Override)</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">Display Name</label>
+                                <input
+                                    type="text"
+                                    name="organizerName"
+                                    value={formData.organizerName}
+                                    onChange={handleChange}
+                                    placeholder="e.g. John Doe"
+                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">Display Email</label>
+                                <input
+                                    type="email"
+                                    name="organizerEmail"
+                                    value={formData.organizerEmail}
+                                    onChange={handleChange}
+                                    placeholder="e.g. contact@event.com"
+                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">Display Mobile</label>
+                                <input
+                                    type="tel"
+                                    name="organizerMobile"
+                                    value={formData.organizerMobile}
+                                    onChange={handleChange}
+                                    placeholder="e.g. +91 9876543210"
+                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2"
+                                />
+                            </div>
                         </div>
                     </div>
-                </div>
+                )}
 
                 {/* Payment Details - Only for Organizers */}
                 {userRole === 'organizer' && (

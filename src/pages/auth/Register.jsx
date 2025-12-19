@@ -22,8 +22,8 @@ const Register = () => {
         "Innovation distinguishes between a leader and a follower.",
         "The best way to predict the future is to create it.",
         "Technology is best when it brings people together.",
-        "First, solve the problem. Then, write the code.",
-        "Simplicity is the soul of efficiency."
+        // "First, solve the problem. Then, write the code.",
+        // "Simplicity is the soul of efficiency."
     ];
     // Select a random quote index once on mount
     const [currentQuoteIndex] = useState(Math.floor(Math.random() * quotes.length));

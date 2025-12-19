@@ -142,7 +142,7 @@ const Home = () => {
     useEffect(() => {
         const interval = setInterval(() => {
             setCurrentImageIndex((prev) => (prev + 1) % heroImages.length);
-        }, 5000);
+        }, 10000);
         return () => clearInterval(interval);
     }, []);
 
@@ -158,14 +158,28 @@ const Home = () => {
                         The existing code has a white/gray background for events. I should make that transparent or dark.
                     */}
                     <div className="absolute inset-0 z-0">
-                        {heroImages.map((img, index) => (
-                            <img
-                                key={index}
-                                src={img}
-                                alt="Event Background"
-                                className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${index === currentImageIndex ? 'opacity-60' : 'opacity-0'}`}
-                            />
-                        ))}
+                        {/* Mobile Background - Video */}
+                        <video
+                            autoPlay
+                            loop
+                            muted
+                            playsInline
+                            className="absolute inset-0 w-full h-full object-cover opacity-60 md:hidden"
+                        >
+                            <source src="/assets/videos/background.mp4" type="video/mp4" />
+                        </video>
+
+                        {/* Desktop Background - Slideshow */}
+                        <div className="hidden md:block absolute inset-0 w-full h-full">
+                            {heroImages.map((img, index) => (
+                                <img
+                                    key={index}
+                                    src={img}
+                                    alt="Event Background"
+                                    className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-10000 ${index === currentImageIndex ? 'opacity-60' : 'opacity-0'}`}
+                                />
+                            ))}
+                        </div>
                         <div className="absolute inset-0 bg-gradient-to-b from-black/0 via-black/0 to-transparent backdrop-blur-[1px]"></div>
                     </div>
 
@@ -194,8 +208,14 @@ const Home = () => {
                             className="bg-white/5 backdrop-blur-xl rounded-3xl p-8 md:p-10 border border-white/10 inline-block shadow-2xl max-w-4xl w-full"
                         >
                             <div className="flex items-center justify-center gap-2 mb-8 text-gray-300">
-                                <Clock size={20} className="text-blue-400" />
-                                <span className="uppercase tracking-widest text-sm font-semibold">Registration Ends In</span>
+                                {isRegistrationClosed ? (
+                                    <></>
+                                ) : (
+                                    <>
+                                        <Clock size={20} className="text-blue-400" />
+                                        <span className="uppercase tracking-widest text-sm font-semibold">Registration Ends In</span>
+                                    </>
+                                )}
                             </div>
 
                             <div className="flex justify-center flex-wrap gap-4 md:gap-8">

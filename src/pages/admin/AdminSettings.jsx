@@ -14,7 +14,10 @@ const AdminSettings = () => {
                 // Format for datetime-local input: YYYY-MM-DDTHH:mm
                 if (response.data.registrationDeadline) {
                     const date = new Date(response.data.registrationDeadline);
-                    const formatted = date.toISOString().slice(0, 16);
+                    // Adjust to local time for display
+                    const offset = date.getTimezoneOffset();
+                    const localDate = new Date(date.getTime() - (offset * 60 * 1000));
+                    const formatted = localDate.toISOString().slice(0, 16);
                     setDeadline(formatted);
                 }
             } catch (error) {
