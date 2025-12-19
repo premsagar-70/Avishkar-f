@@ -15,7 +15,6 @@ const EventForm = ({ onEventCreated, initialData = null }) => {
         price: '',
         imageUrl: '',
         assignedTo: '',
-        assignedTo: '',
         upiId: '',
         slots: '',
         year: '2026',

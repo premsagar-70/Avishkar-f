@@ -223,7 +223,7 @@ const Home = () => {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1, y: [0, 10, 0] }}
                         transition={{ duration: 2, repeat: Infinity, delay: 1 }}
-                        className="absolute bottom-10 left-1/2 -translate-x-1/2 
+                        className="absolute bottom-10 left-100 -translate-x-1/2 
                    text-white/70 flex flex-col items-center 
                    z-50 pointer-events-none"
                     >
