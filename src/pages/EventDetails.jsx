@@ -85,12 +85,19 @@ const EventDetails = () => {
 
     const isRegistrationClosed = deadline && new Date() > deadline;
     const isSlotsFull = event.slots && event.registeredCount >= event.slots;
+
+    // Check if event date has passed
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const eventDate = new Date(event.date);
+    const isEventCompleted = eventDate < today;
+
     const availableSlots = event.slots
         ? event.slots - (event.registeredCount || 0)
         : null;
 
     const handleRegisterClick = () => {
-        if (isRegistrationClosed || isSlotsFull || isRegistered) return;
+        if (isRegistrationClosed || isSlotsFull || isRegistered || isEventCompleted) return;
 
         if (!currentUser) {
             navigate('/login', { state: { from: location, showModalOnReturn: true } });
@@ -107,15 +114,31 @@ const EventDetails = () => {
         eventId: event.id
     }) : '';
 
+    const handleBack = () => {
+        if (location.state?.from) {
+            navigate(location.state.from);
+        } else {
+            // If no state history (direct link or refresh), default to events
+            // The user requested: only if prev page is login/register go to Events? 
+            // If I don't have state, I can't know for sure. 
+            // But if I use navigate(-1), it's risky if the history is empty or external.
+            // Using /events as safe fallback is standard.
+            // However, to satisfy "otherwise land in previous page", navigate(-1) is the closest native "Back".
+            // But if previous page was Login, -1 goes to Login -> Redirect Loop or Home/Dashboard.
+            // I will stick to location.state for explicit "From Home" knowledge, and fallback to /events.
+            navigate('/events');
+        }
+    };
+
     return (
         <div className="min-h-screen bg-white">
             <div className="min-h-screen py-24 px-4">
                 <div className="max-w-4xl mx-auto">
                     <button
-                        onClick={() => navigate('/events')}
+                        onClick={handleBack}
                         className="flex items-center text-gray-800 hover:text-blue-600 mb-6 transition-colors"
                     >
-                        <ArrowLeft size={20} className="mr-2" /> Back to Events
+                        <ArrowLeft size={20} className="mr-2" /> Back
                     </button>
 
                     <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-xl overflow-hidden border border-gray-200">
@@ -218,18 +241,20 @@ const EventDetails = () => {
 
                                         <button
                                             onClick={handleRegisterClick}
-                                            disabled={isRegistrationClosed || isSlotsFull || isRegistered}
+                                            disabled={isRegistrationClosed || isSlotsFull || isRegistered || isEventCompleted}
                                             className={`px-8 py-4 rounded-xl font-bold text-lg w-full md:w-auto transition-all duration-300
-                             ${isRegistrationClosed || isSlotsFull || isRegistered
-                                                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed border border-gray-300 hidden' // Hide register button if registered
+                             ${isRegistrationClosed || isSlotsFull || isRegistered || isEventCompleted
+                                                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed border border-gray-300' // Show gray button for completed/closed
                                                     : 'bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:shadow-lg hover:scale-[1.02]'
-                                                }`}
+                                                } ${isRegistered && !isEventCompleted ? 'hidden' : ''}`} // Hide if registered and not completed (though logic above handles completed separately ideally)
                                         >
-                                            {isRegistrationClosed
-                                                ? 'Registration Closed'
-                                                : isSlotsFull
-                                                    ? 'Slots Full'
-                                                    : 'Register for Event'}
+                                            {isEventCompleted
+                                                ? 'Event Completed'
+                                                : isRegistrationClosed
+                                                    ? 'Registration Closed'
+                                                    : isSlotsFull
+                                                        ? 'Slots Full'
+                                                        : 'Register for Event'}
                                         </button>
                                     </div>
                                 ) : (

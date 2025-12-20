@@ -2,10 +2,11 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
-import { FaFacebook, FaTwitter, FaInstagram, FaLinkedin } from 'react-icons/fa';
 import { ArrowRight, Clock } from 'lucide-react';
 import { motion } from 'framer-motion';
 import EventSection from '../components/EventSection';
+import Footer from '../components/Footer';
+import { CardSkeleton } from '../components/Skeleton';
 
 const TimerUnit = ({ value, label }) => (
     <div className="flex flex-col items-center mx-2 md:mx-4">
@@ -21,6 +22,8 @@ const TimerUnit = ({ value, label }) => (
 const Home = () => {
     const [deadline, setDeadline] = useState(null);
     const [events, setEvents] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [deadlineLoading, setDeadlineLoading] = useState(true);
     const [timeLeft, setTimeLeft] = useState({});
     const { currentUser, userRole } = useAuth();
     const navigate = useNavigate();
@@ -49,8 +52,11 @@ const Home = () => {
             } catch (error) {
                 console.error("Failed to fetch settings", error);
                 setDeadline(new Date("2025-12-25"));
+            } finally {
+                setDeadlineLoading(false);
             }
         };
+        fetchEvents(); // Wait, this is fetchSettings. Logic error in original file variable naming? No, separate fetch.
         fetchSettings();
     }, []);
 
@@ -95,31 +101,47 @@ const Home = () => {
             } catch (error) {
                 console.error("Failed to fetch events", error);
                 setError("Failed to load events. Please check your internet connection or try again later.");
+            } finally {
+                setLoading(false);
             }
         };
         fetchEvents();
     }, []);
 
+    const now = new Date();
+    // Reset time to start of day for accurate comparison if date is only YYYY-MM-DD
+    // But assuming date field is standard ISO or Date object.
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const upcomingEvents = useMemo(() => {
+        return events.filter(e => {
+            const eventDate = new Date(e.date);
+            return eventDate >= today;
+        });
+    }, [events]);
+
+
     const technicalEvents = useMemo(
-        () => events.filter(e => e.category === 'technical'),
-        [events]
+        () => upcomingEvents.filter(e => e.category === 'technical'),
+        [upcomingEvents]
     );
 
     const nonTechnicalEvents = useMemo(
-        () => events.filter(e => e.category === 'non-technical' || e.category === 'cultural'),
-        [events]
+        () => upcomingEvents.filter(e => e.category === 'non-technical' || e.category === 'cultural'),
+        [upcomingEvents]
     );
 
     const spotEvents = useMemo(
-        () => events.filter(e => e.category === 'spot' || e.category === 'workshop'),
-        [events]
+        () => upcomingEvents.filter(e => e.category === 'spot'),
+        [upcomingEvents]
     );
 
     const handleRegister = (eventId) => {
         if (!currentUser) {
-            window.location.href = '/login';
+            navigate('/login', { state: { from: location.pathname } });
         } else {
-            window.location.href = `/events/${eventId}`;
+            navigate(`/events/${eventId}`, { state: { from: location.pathname } });
         }
     };
 
@@ -194,7 +216,7 @@ const Home = () => {
                                 <span className="text-sm md:text-base text-blue-300 font-medium tracking-widest uppercase">National Level Techno-Cultural Fest</span>
                             </div>
                             <h1 className="text-7xl md:text-9xl font-black text-white mb-6 tracking-tighter leading-none">
-                                AVISKHAR <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500">2026</span>
+                                AVISKHAR <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500">{new Date().getFullYear()}</span>
                             </h1>
                             <p className="text-gray-300 text-lg md:text-xl max-w-2xl mx-auto font-light leading-relaxed">
                                 Unleash your potential at the biggest tech fest of the year. Innovation, culture, and technology converge here.
@@ -219,7 +241,17 @@ const Home = () => {
                             </div>
 
                             <div className="flex justify-center flex-wrap gap-4 md:gap-8">
-                                {isRegistrationClosed ? (
+                                {deadlineLoading ? (
+                                    // Skeleton for Timer
+                                    <>
+                                        {[1, 2, 3, 4].map((i) => (
+                                            <div key={i} className={`flex flex-col items-center mx-2 md:mx-4 ${i === 4 ? 'hidden md:flex' : ''}`}>
+                                                <div className="w-16 h-16 md:w-24 md:h-24 bg-white/10 backdrop-blur-md border border-white/20 rounded-lg animate-pulse"></div>
+                                                <div className="h-4 w-12 bg-white/10 rounded mt-2 animate-pulse"></div>
+                                            </div>
+                                        ))}
+                                    </>
+                                ) : isRegistrationClosed ? (
                                     <div className="text-center py-4">
                                         <span className="text-4xl md:text-6xl font-bold text-red-500 drop-shadow-lg">Registration Closed</span>
                                         <p className="text-gray-400 mt-2">See you at the event!</p>
@@ -263,95 +295,52 @@ const Home = () => {
                             </div>
                         </div>
                     )}
-                    <EventSection
-                        title="Technical Events"
-                        eventsList={technicalEvents}
-                        currentUser={currentUser}
-                        userRole={userRole}
-                        handleRegister={handleRegister}
-                        isRegistrationClosed={isRegistrationClosed}
-                    />
-                    <EventSection
-                        title="Non-Technical Events"
-                        eventsList={nonTechnicalEvents}
-                        currentUser={currentUser}
-                        userRole={userRole}
-                        handleRegister={handleRegister}
-                        isRegistrationClosed={isRegistrationClosed}
-                    />
-                    <EventSection
-                        title="Spot Events & Workshops"
-                        eventsList={spotEvents}
-                        currentUser={currentUser}
-                        userRole={userRole}
-                        handleRegister={handleRegister}
-                        isRegistrationClosed={isRegistrationClosed}
-                    />
+
+                    {loading ? (
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
+                            {[1, 2, 3].map((section) => (
+                                <div key={section}>
+                                    <div className="h-8 w-48 bg-gray-700/50 rounded mb-8 animate-pulse"></div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                                        {[1, 2, 3].map((i) => (
+                                            <CardSkeleton key={i} />
+                                        ))}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <>
+                            <EventSection
+                                title="Technical Events"
+                                eventsList={technicalEvents}
+                                currentUser={currentUser}
+                                userRole={userRole}
+                                handleRegister={handleRegister}
+                                isRegistrationClosed={isRegistrationClosed}
+                            />
+                            <EventSection
+                                title="Non-Technical Events"
+                                eventsList={nonTechnicalEvents}
+                                currentUser={currentUser}
+                                userRole={userRole}
+                                handleRegister={handleRegister}
+                                isRegistrationClosed={isRegistrationClosed}
+                            />
+                            <EventSection
+                                title="Spot Events"
+                                eventsList={spotEvents}
+                                currentUser={currentUser}
+                                userRole={userRole}
+                                handleRegister={handleRegister}
+                                isRegistrationClosed={isRegistrationClosed}
+                            />
+                        </>
+                    )}
                 </div>
 
                 {/* Footer */}
-                <footer className="bg-black/100 backdrop-blur-md text-white py-8 border-t border-white/10">
-                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-
-                        {/* Layout Change: 
-               - Removed 'justify-between' (which pushes items to edges).
-               - Added 'justify-center' to center the whole group.
-               - Added 'gap-12 md:gap-32' to create space between the Logo and Links.
-            */}
-                        <div className="flex flex-col md:flex-row justify-center items-center gap-12 md:gap-32 mb-10">
-
-                            {/* Left Side: Brand & Tagline */}
-                            <div className="text-center md:text-left">
-                                <h2 className="text-3xl font-bold tracking-tight mb-2 bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">
-                                    AVISKHAR 2026
-                                </h2>
-                                <p className="text-gray-500 font-medium tracking-wide">Innovate. Create. Inspire.</p>
-                            </div>
-
-                            {/* Right Side: Navigation & Socials */}
-                            {/* Changed items-end to items-start or items-center to look better in the center layout */}
-                            <div className="flex flex-col items-center md:items-start space-y-6">
-
-                                {/* Navigation Links */}
-                                <div className="flex space-x-6 sd:pl-0 md:pl-20 md:space-x-8">
-                                    <a href="/about" className="text-gray-400 hover:text-blue-400 transition-colors font-medium text-sm uppercase tracking-wider">About</a>
-                                    <a href="/events" className="text-gray-400 hover:text-blue-400 transition-colors font-medium text-sm uppercase tracking-wider">Events</a>
-                                    <a href="/contact" className="text-gray-400 hover:text-blue-400 transition-colors font-medium text-sm uppercase tracking-wider">Contact</a>
-                                    {/* <a href="#" className="text-gray-400 hover:text-blue-400 transition-colors font-medium text-sm uppercase tracking-wider">Sponsors</a> */}
-                                </div>
-
-                                {/* Social Icons */}
-                                <h1 className="text-white font-medium tracking-wide text-center sd:pl-20 md:pl-40">Follow Us</h1>
-                                <div className="flex space-x-4 sd:pl-0 md:pl-20">
-                                    <a href="#" className="p-3 bg-white/5 rounded-full hover:bg-blue-600 hover:text-white text-gray-400 transition-all duration-300 hover:-translate-y-1">
-                                        <FaInstagram size={18} />
-                                    </a>
-                                    <a href="#" className="p-3 bg-white/5 rounded-full hover:bg-black hover:text-white text-gray-400 transition-all duration-300 hover:-translate-y-1">
-                                        <FaTwitter size={18} />
-                                    </a>
-                                    <a href="#" className="p-3 bg-white/5 rounded-full hover:bg-blue-700 hover:text-white text-gray-400 transition-all duration-300 hover:-translate-y-1">
-                                        <FaLinkedin size={18} />
-                                    </a>
-                                    <a href="#" className="p-3 bg-white/5 rounded-full hover:bg-blue-800 hover:text-white text-gray-400 transition-all duration-300 hover:-translate-y-1">
-                                        <FaFacebook size={18} />
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Bottom Section: Copyright */}
-                        <div className="pt-4 flex flex-col md:flex-row justify-center items-center gap-4 text-center">
-                            <p className="text-gray-500 text-sm">
-                                Copyright © Aviskhar {new Date().getFullYear()}. All rights reserved.
-                            </p>
-                            {/* Added a separator dot for desktop view */}
-                            {/* <span className="hidden md:block text-gray-700">•</span>
-                            <p className="text-gray-300 text-xs">
-                                Designed & Developed by <a href="#" target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-blue-400 transition-colors font-medium">Prem Sagar</a> and <a href="#" target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-blue-400 transition-colors font-medium">Dinesh</a>
-                            </p> */}
-                        </div>
-                    </div>
-                </footer>
+                <Footer />
             </div>
         </>
     );

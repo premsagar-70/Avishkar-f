@@ -20,8 +20,15 @@ const Events = () => {
         const fetchEvents = async () => {
             try {
                 const response = await api.get('/events');
-                // Only show active/approved events, filter out completed/archived ones
-                const activeEvents = response.data.filter(e => e.status === 'approved');
+                // Only show active/approved events, and filter out those that have passed (date < today)
+                const today = new Date();
+                today.setHours(0, 0, 0, 0); // specific time adjustment often desirable, but simple comparison works
+
+                const activeEvents = response.data.filter(e => {
+                    if (e.status !== 'approved') return false;
+                    const eventDate = new Date(e.date);
+                    return eventDate >= today;
+                });
                 setEvents(activeEvents);
             } catch (error) {
                 console.error("Failed to fetch events", error);

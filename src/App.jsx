@@ -20,6 +20,7 @@ import PendingApproval from './pages/auth/PendingApproval';
 
 import PreviousYear from './pages/PreviousYear';
 import Profile from './pages/Profile';
+import ScrollToTop from './components/ScrollToTop';
 
 import { Toaster, toast } from 'react-hot-toast';
 
@@ -61,6 +62,7 @@ function AppContent() {
   return (
     <AuthProvider>
       <Router>
+        <ScrollToTop />
         <div className="min-h-screen bg-gray-100 font-sans text-gray-900">
           <Toaster position="top-right" />
           <Routes>
@@ -80,8 +82,7 @@ function AppContent() {
               <Route path="/about" element={<About />} />
               <Route path="/contact" element={<Contact />} />
               <Route path="/pending-approval" element={<PendingApproval />} />
-              {/* Previous Years Route - matches /23-24, /2025, etc. */}
-              <Route path="/:year" element={<PreviousYear />} />
+              <Route path="/previous-years" element={<PreviousYear />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
