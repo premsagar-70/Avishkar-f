@@ -138,7 +138,7 @@ const Events = () => {
 
                                     return (
                                         <div key={event.id} className="relative group h-full">
-                                            <Link to={`/events/${event.id}`} className="block h-full">
+                                            <Link to={`/events/${event.id}`} state={{ from: '/events' }} className="block h-full">
                                                 <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 flex flex-col h-full overflow-hidden">
                                                     <div className="relative h-48 overflow-hidden">
                                                         <img

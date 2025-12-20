@@ -1,11 +1,12 @@
 import { useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Calendar, MapPin, ArrowRight, Clock, ChevronLeft, ChevronRight, User } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const EventSection = ({ title, eventsList, currentUser, userRole, handleRegister, isRegistrationClosed, myRegistrations = [] }) => {
     const scrollContainerRef = useRef(null);
     const navigate = useNavigate();
+    const location = useLocation();
 
     const scroll = (direction) => {
         if (scrollContainerRef.current) {
@@ -74,7 +75,7 @@ const EventSection = ({ title, eventsList, currentUser, userRole, handleRegister
                                     whileInView={{ opacity: 1, scale: 1 }}
                                     viewport={{ once: true }}
                                     transition={{ duration: 0.5, delay: index * 0.1 }}
-                                    onClick={() => navigate(`/events/${event.id}`)}
+                                    onClick={() => navigate(`/events/${event.id}`, { state: { from: location.pathname } })}
                                     className="flex-none w-[280px] md:w-[320px] bg-white/50 backdrop-blur-md rounded-xl overflow-hidden border border-gray-100/50 shadow-sm hover:shadow-xl hover:border-blue-200/50 transition-all duration-500 group cursor-pointer relative snap-center"
                                 >
                                     {/* Registered Badge */}

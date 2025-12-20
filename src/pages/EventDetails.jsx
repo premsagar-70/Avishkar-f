@@ -37,23 +37,37 @@ const EventDetails = () => {
                         : new Date('2025-12-25')
                 );
 
+                let foundRegistration = null;
+
                 if (currentUser) {
                     try {
                         const regRes = await api.get(`/registrations/check/${id}/${currentUser.uid}`);
                         if (regRes.data.registered) {
-                            setRegistrationData(regRes.data.registration || regRes.data); // Adjust based on actual API response structure
+                            foundRegistration = regRes.data.registration || regRes.data;
+                            setRegistrationData(foundRegistration);
                         }
                     } catch (regErr) {
                         try {
                             const allRegs = await api.get(`/registrations/user/${currentUser.uid}`);
-                            const foundReg = allRegs.data.find(r => r.eventId === id);
-                            if (foundReg) {
-                                setRegistrationData(foundReg);
+                            const found = allRegs.data.find(r => r.eventId === id);
+                            if (found) {
+                                foundRegistration = found;
+                                setRegistrationData(found);
                             }
                         } catch (e) {
                             console.error("Failed to check registration", e);
                         }
                     }
+                }
+
+
+                // Check if we returned specific state to open modal - Only after checking registration
+                if (location.state?.showModalOnReturn && currentUser) {
+                    if (!foundRegistration) {
+                        setShowModal(true);
+                    }
+                    // Clear the specific state flag so it doesn't reopen on reload
+                    navigate('.', { replace: true, state: { ...location.state, showModalOnReturn: null } });
                 }
 
             } catch (err) {
@@ -64,13 +78,7 @@ const EventDetails = () => {
         };
 
         fetchEventAndSettings();
-
-        // Check if we returned specific state to open modal
-        if (location.state?.showModalOnReturn && currentUser) {
-            setShowModal(true);
-            // Clear the specific state flag so it doesn't reopen on reload
-            navigate('.', { replace: true, state: { ...location.state, showModalOnReturn: null } });
-        }
+        // Removed standalone check block from here
     }, [id, currentUser, location.state, navigate]);
 
     if (loading) {

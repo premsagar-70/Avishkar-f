@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Calendar, Archive, ArrowRight } from 'lucide-react';
 import api from '../services/api';
 
@@ -8,6 +8,7 @@ const PreviousYear = () => {
     const [loading, setLoading] = useState(true);
     const [years, setYears] = useState([]);
     const [selectedYear, setSelectedYear] = useState(null);
+    const location = useLocation();
 
     useEffect(() => {
         const fetchEvents = async () => {
@@ -98,7 +99,7 @@ const PreviousYear = () => {
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                             {filteredEvents.map((event) => (
                                 <div key={event.id} className="group h-full">
-                                    <Link to={`/events/${event.id}`}>
+                                    <Link to={`/events/${event.id}`} state={{ from: location.pathname }}>
                                         <div className="bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 flex flex-col h-full overflow-hidden grayscale hover:grayscale-0 cursor-pointer">
                                             <div className="relative h-48 overflow-hidden">
                                                 <img
