@@ -171,12 +171,15 @@ const Register = () => {
                                     </div>
                                     <input
                                         type="email"
+                                        name="email"
+                                        autoComplete="email"
                                         required
-                                        className="block w-full pl-10 px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white/50 focus:bg-white"
+                                        className="block w-full pl-10 px-4 py-3 border border-gray-300 rounded-xl"
                                         placeholder="you@example.com"
                                         value={email}
                                         onChange={(e) => setEmail(e.target.value)}
                                     />
+
                                 </div>
                             </motion.div>
 
@@ -188,12 +191,15 @@ const Register = () => {
                                     </div>
                                     <input
                                         type="tel"
+                                        name="phone"
+                                        autoComplete="tel"
                                         required
-                                        className="block w-full pl-10 px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white/50 focus:bg-white"
+                                        className="block w-full pl-10 px-4 py-3 border border-gray-300 rounded-xl"
                                         placeholder="+91 9876543210"
                                         value={mobileNumber}
                                         onChange={(e) => setMobileNumber(e.target.value)}
                                     />
+
                                 </div>
                             </motion.div>
 
@@ -205,6 +211,7 @@ const Register = () => {
                                     </div>
                                     <input
                                         type="password"
+                                        autoComplete="off"
                                         required
                                         className="block w-full pl-10 px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white/50 focus:bg-white"
                                         placeholder="••••••••"
@@ -223,6 +230,7 @@ const Register = () => {
                                     <input
                                         type="password"
                                         required
+                                        autoComplete="off"
                                         className="block w-full pl-10 px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white/50 focus:bg-white"
                                         placeholder="••••••••"
                                         value={confirmPassword}
