@@ -282,7 +282,25 @@ const EventDetails = () => {
                                 <Tag size={16} className="mr-1" /> {event.category}
                             </span>
 
-                            <h1 className="text-4xl font-bold mb-6 text-gray-900">{event.title}</h1>
+                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                                <h1 className="text-4xl font-bold text-gray-900">{event.title}</h1>
+                                {(userRole === 'admin' || userRole === 'organizer') && (
+                                    <div className="flex gap-2 w-full md:w-auto">
+                                        <button
+                                            onClick={() => navigate(`/organizer/events/${event.id}/participants`)}
+                                            className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-purple-700 transition-colors shadow-lg hover:shadow-xl text-sm"
+                                        >
+                                            <Users size={18} /> Manage
+                                        </button>
+                                        <button
+                                            onClick={() => setShowEditModal(true)}
+                                            className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-white text-gray-900 border border-gray-200 px-4 py-2 rounded-lg font-semibold hover:bg-gray-50 transition-colors shadow-sm text-sm"
+                                        >
+                                            <Edit size={18} /> Edit
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
 
                             <div className="grid md:grid-cols-2 gap-6 mb-6 text-gray-800">
                                 <div className="flex items-center">
@@ -656,22 +674,7 @@ const EventDetails = () => {
                                             placeholder="CSE/IT"
                                         />
                                     </div>
-                                    {(userRole === 'admin' || userRole === 'organizer') && (
-                                        <div className="flex gap-2 w-full sm:w-auto">
-                                            <button
-                                                onClick={() => navigate(`/organizer/events/${event.id}/participants`)}
-                                                className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-purple-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-purple-700 transition-colors shadow-lg hover:shadow-xl"
-                                            >
-                                                <Users size={20} /> Manage Participants
-                                            </button>
-                                            <button
-                                                onClick={() => setShowEditModal(true)}
-                                                className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-white text-gray-900 border border-gray-200 px-6 py-3 rounded-lg font-semibold hover:bg-gray-50 transition-colors shadow-sm"
-                                            >
-                                                <Edit size={20} /> Edit Event
-                                            </button>
-                                        </div>
-                                    )}
+
                                     <button
                                         type="submit"
                                         className="w-full bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
