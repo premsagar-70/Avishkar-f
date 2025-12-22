@@ -3,9 +3,10 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import RegistrationModal from '../components/RegistrationModal';
-import { ArrowLeft, Calendar, MapPin, Tag, Clock, QrCode, X } from 'lucide-react';
+import { ArrowLeft, Calendar, MapPin, Tag, Clock, QrCode, X, Image as ImageIcon, Trash2, Plus, Upload } from 'lucide-react';
 import QRCode from 'react-qr-code';
 import { DetailSkeleton } from '../components/Skeleton';
+import toast from 'react-hot-toast';
 
 
 const EventDetails = () => {
@@ -20,6 +21,7 @@ const EventDetails = () => {
     const [showQRModal, setShowQRModal] = useState(false);
     const [deadline, setDeadline] = useState(null);
     const [registrationData, setRegistrationData] = useState(null);
+    const [uploading, setUploading] = useState(false);
 
     useEffect(() => {
         const fetchEventAndSettings = async () => {
@@ -121,6 +123,68 @@ const EventDetails = () => {
         userId: currentUser.uid,
         eventId: event.id
     }) : '';
+
+    const handleGalleryUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        if (file.size > 5 * 1024 * 1024) {
+            toast.error('File size too large (max 5MB)');
+            return;
+        }
+
+        setUploading(true);
+        try {
+            // 1. Convert to Base64
+            const reader = new FileReader();
+            const base64Promise = new Promise((resolve, reject) => {
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+            const base64Image = await base64Promise;
+
+            // 2. Upload to Server
+            const uploadRes = await api.post('/upload', {
+                image: base64Image,
+                folder: 'events/gallery' // Organize in a subfolder
+            });
+            const newImageUrl = uploadRes.data.url;
+
+            // 3. Update Event Document
+            const currentGallery = event.gallery || [];
+            const updatedGallery = [...currentGallery, newImageUrl];
+
+            await api.put(`/events/${id}`, {
+                gallery: updatedGallery
+            });
+
+            // 4. Update Local State
+            setEvent(prev => ({ ...prev, gallery: updatedGallery }));
+            toast.success('Photo added to gallery!');
+        } catch (error) {
+            console.error("Gallery upload failed", error);
+            toast.error('Failed to upload photo');
+        } finally {
+            setUploading(false);
+        }
+    };
+
+    const handleDeleteImage = async (imageToDelete) => {
+        if (!window.confirm("Are you sure you want to delete this photo?")) return;
+
+        try {
+            const updatedGallery = event.gallery.filter(img => img !== imageToDelete);
+            await api.put(`/events/${id}`, {
+                gallery: updatedGallery
+            });
+            setEvent(prev => ({ ...prev, gallery: updatedGallery }));
+            toast.success('Photo deleted');
+        } catch (error) {
+            console.error("Delete failed", error);
+            toast.error('Failed to delete photo');
+        }
+    };
 
     const handleBack = () => {
         if (location.state?.from) {
@@ -229,7 +293,70 @@ const EventDetails = () => {
                                 </div>
                             )}
 
-                            <div className="border-t border-gray-200 mt-8 pt-6">
+                            {/* Event Gallery Section */}
+                            {(event.gallery?.length > 0 || ((userRole === 'admin' || userRole === 'organizer') && isEventCompleted)) && (
+                                <div className="mb-12">
+                                    <div className="flex items-center justify-between mb-6">
+                                        <h3 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                                            <ImageIcon className="text-blue-600" /> Event Gallery
+                                        </h3>
+                                        {/* Upload Button */}
+                                        {(userRole === 'admin' || userRole === 'organizer') && isEventCompleted && (
+                                            <div className="relative">
+                                                <input
+                                                    type="file"
+                                                    id="gallery-upload"
+                                                    className="hidden"
+                                                    accept="image/*"
+                                                    onChange={handleGalleryUpload}
+                                                    disabled={uploading}
+                                                />
+                                                <label
+                                                    htmlFor="gallery-upload"
+                                                    className={`flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-full font-semibold cursor-pointer border border-blue-100 hover:bg-blue-100 transition-colors ${uploading ? 'opacity-50 cursor-wait' : ''}`}
+                                                >
+                                                    {uploading ? (
+                                                        <>Processing...</>
+                                                    ) : (
+                                                        <>
+                                                            <Plus size={18} /> Add Photo
+                                                        </>
+                                                    )}
+                                                </label>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {(!event.gallery || event.gallery.length === 0) ? (
+                                        <div className="text-center py-10 bg-gray-50 rounded-xl border-dashed border-2 border-gray-200">
+                                            <p className="text-gray-500">No photos uploaded yet. Add some memories!</p>
+                                        </div>
+                                    ) : (
+                                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                            {event.gallery.map((img, index) => (
+                                                <div key={index} className="relative group aspect-square rounded-xl overflow-hidden bg-gray-100">
+                                                    <img
+                                                        src={img}
+                                                        alt={`Gallery ${index + 1}`}
+                                                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                                                    />
+                                                    {(userRole === 'admin' || userRole === 'organizer') && isEventCompleted && (
+                                                        <button
+                                                            onClick={() => handleDeleteImage(img)}
+                                                            className="absolute top-2 right-2 p-1.5 bg-red-500/80 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                                                            title="Delete photo"
+                                                        >
+                                                            <Trash2 size={16} />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            <div className="border-t border-gray-200 pt-6">
                                 {(!currentUser || (userRole !== 'admin' && userRole !== 'organizer')) ? (
                                     <div className="flex flex-col gap-4">
                                         {isRegistered ? (

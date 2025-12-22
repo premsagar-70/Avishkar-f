@@ -105,7 +105,7 @@ const Register = () => {
                     </motion.blockquote>
                     <div className="flex items-center gap-4">
                         <div className="w-12 h-1 bg-blue-500 rounded-full"></div>
-                        <p className="text-lg font-medium text-blue-200">Aviskhar Team</p>
+                        <p className="text-lg font-medium text-blue-200">Avishkar Team</p>
                     </div>
                 </motion.div>
             </div>
@@ -133,7 +133,7 @@ const Register = () => {
                             transition={{ delay: 0.3 }}
                             className="mt-2 text-sm text-gray-600"
                         >
-                            Join Aviskhar today
+                            Join Avishkar today
                         </motion.p>
                     </div>
 

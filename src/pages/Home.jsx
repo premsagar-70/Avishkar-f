@@ -218,7 +218,7 @@ const Home = () => {
                                     <span className="text-sm md:text-base text-blue-300 font-medium tracking-widest uppercase">National Level Techno-Cultural Fest</span>
                                 </div>
                                 <h1 className="text-7xl md:text-9xl font-black text-white mb-6 tracking-tighter leading-none">
-                                    AVISKHAR <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500">{new Date().getFullYear()}</span>
+                                    AVISHKAR <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500">{new Date().getFullYear()}</span>
                                 </h1>
                                 <p className="text-gray-300 text-lg md:text-xl max-w-2xl mx-auto font-light leading-relaxed">
                                     Unleash your potential at the biggest tech fest of the year. Innovation, culture, and technology converge here.

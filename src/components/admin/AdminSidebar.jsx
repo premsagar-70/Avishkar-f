@@ -27,7 +27,7 @@ const AdminSidebar = ({ isOpen, onClose }) => {
             <div className="p-6 border-b border-gray-800 flex justify-between items-center">
                 <div>
                     <h1 className="text-2xl font-bold text-blue-400">Admin Panel</h1>
-                    <p className="text-gray-400 text-sm">Aviskhar</p>
+                    <p className="text-gray-400 text-sm">Avishkar</p>
                 </div>
                 {/* Close button for mobile */}
                 <button onClick={onClose} className="md:hidden text-gray-400 hover:text-white">

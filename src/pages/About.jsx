@@ -14,7 +14,7 @@ const About = () => {
 
                 <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-white">
                     <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6">
-                        About <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500">Aviskhar</span>
+                        About <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500">Avishkar</span>
                     </h1>
                     <p className="text-xl md:text-2xl text-gray-300 max-w-3xl mx-auto font-light leading-relaxed">
                         Where innovation meets tradition. The ultimate convergence of technology, culture, and creativity.
@@ -32,10 +32,10 @@ const About = () => {
                             <Rocket className="text-blue-600" /> The Journey
                         </h2>
                         <p className="text-lg text-gray-600 leading-relaxed mb-6">
-                            Aviskhar began as a humble initiative to bring together bright minds from across the region. Over the years, it has evolved into a massive techno-cultural phenomenon, attracting thousands of participants, industry experts, and creative talents.
+                            Avishkar began as a humble initiative to bring together bright minds from across the region. Over the years, it has evolved into a massive techno-cultural phenomenon, attracting thousands of participants, industry experts, and creative talents.
                         </p>
                         <p className="text-lg text-gray-600 leading-relaxed">
-                            It is not just a fest; it's a celebration of engineering excellence, artistic expression, and the unyielding spirit of youth. From coding marathons to mesmerizing dance battles, Aviskhar is the stage where legends are born.
+                            It is not just a fest; it's a celebration of engineering excellence, artistic expression, and the unyielding spirit of youth. From coding marathons to mesmerizing dance battles, Avishkar is the stage where legends are born.
                         </p>
                     </div>
                     <div className="relative">

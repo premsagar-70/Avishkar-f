@@ -15,7 +15,7 @@ const Footer = () => {
                     {/* Left Side: Brand & Tagline */}
                     <div className="text-center md:text-left">
                         <h2 className="text-3xl font-bold tracking-tight mb-2 bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">
-                            AVISKHAR
+                            AVISHKAR
                         </h2>
                         <p className="text-gray-500 font-medium tracking-wide">Innovate. Create. Inspire.</p>
                     </div>
@@ -55,7 +55,7 @@ const Footer = () => {
                 {/* Bottom Section: Copyright */}
                 <div className="pt-4 flex flex-col md:flex-row justify-center items-center gap-4 text-center">
                     <p className="text-gray-500 text-sm">
-                        Copyright © Aviskhar {new Date().getFullYear()}. All rights reserved.
+                        Copyright © Avishkar {new Date().getFullYear()}. All rights reserved.
                     </p>
                     {/* Added a separator dot for desktop view */}
                     {/* <span className="hidden md:block text-gray-700">•</span>
