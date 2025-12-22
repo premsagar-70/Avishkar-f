@@ -3,22 +3,12 @@ import { motion } from 'framer-motion';
 import { Calendar, MapPin, ArrowRight, Clock, ChevronLeft, ChevronRight, User } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
-const EventSection = ({ title, eventsList, currentUser, userRole, handleRegister, isRegistrationClosed, myRegistrations = [] }) => {
+const EventSection = ({ title, eventsList, currentUser, userRole, handleRegister, isRegistrationClosed, myRegistrations = [], viewAllLink }) => {
     const scrollContainerRef = useRef(null);
     const navigate = useNavigate();
     const location = useLocation();
 
-    const scroll = (direction) => {
-        if (scrollContainerRef.current) {
-            const { current } = scrollContainerRef;
-            const scrollAmount = 350; // Width of card + gap
-            if (direction === 'left') {
-                current.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
-            } else {
-                current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
-            }
-        }
-    };
+    // ... scroll logic ...
 
     return (
         <section className="py-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative group/section">
@@ -27,10 +17,23 @@ const EventSection = ({ title, eventsList, currentUser, userRole, handleRegister
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.6 }}
-                className="flex items-center mb-8"
+                className="flex items-center mb-8 justify-between"
             >
-                <div className="h-10 w-2 bg-blue-600 rounded-full mr-4"></div>
-                <h2 className="text-3xl md:text-4xl font-bold text-gray-900">{title}</h2>
+                <div className="flex items-center">
+                    <div className="h-10 w-2 bg-blue-600 rounded-full mr-4"></div>
+                    <h2 className="text-3xl md:text-4xl font-bold text-gray-900">{title}</h2>
+                </div>
+
+                {viewAllLink && (
+                    <button
+                        onClick={() => navigate(viewAllLink)}
+                        className="flex items-center gap-2 text-blue-600 hover:text-blue-800 transition-colors group/link bg-white/50 backdrop-blur-sm px-4 py-2 rounded-full border border-blue-100/50 hover:bg-blue-50"
+                        title="View all events in this category"
+                    >
+                        <span className="text-sm font-semibold hidden md:inline">View All</span>
+                        <ArrowRight size={20} className="transform group-hover/link:translate-x-1 transition-transform" />
+                    </button>
+                )}
             </motion.div>
 
             {eventsList.length === 0 ? (

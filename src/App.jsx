@@ -108,7 +108,7 @@ function AppContent() {
               <Route path="/about" element={<About />} />
               <Route path="/contact" element={<Contact />} />
               <Route path="/pending-approval" element={<PendingApproval />} />
-              {/* <Route path="/previous-years" element={<PreviousYear />} /> */}
+              <Route path="/previous-years" element={<PreviousYear />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>

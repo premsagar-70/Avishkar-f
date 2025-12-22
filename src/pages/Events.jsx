@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Calendar, MapPin, ArrowRight, User, QrCode, X } from 'lucide-react';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -71,10 +71,7 @@ const Events = () => {
     }, [currentUser, userRole]);
 
     // Filter events based on selected year
-    const filteredEvents = events.filter(e => {
-        if (!selectedYear) return true;
-        return (e.year || new Date(e.date).getFullYear().toString()) === selectedYear;
-    });
+    const filteredEvents = events;
 
     const handleShowQR = (e, eventId, eventTitle) => {
         e.preventDefault(); // Prevent Link navigation
@@ -100,14 +97,43 @@ const Events = () => {
         return acc;
     }, {});
 
-    const allCategories = Object.keys(groupedEvents);
+    const itemCategories = Object.keys(groupedEvents);
+    // Ensure selectedCategory is in the list (if set) so a tab appears even if empty
+    const allCategories = selectedCategory && !itemCategories.includes(selectedCategory)
+        ? [...itemCategories, selectedCategory]
+        : itemCategories;
 
-    // Set default category
+    const [searchParams, setSearchParams] = useSearchParams();
+
+    // Sync selectedCategory with URL
     useEffect(() => {
-        if (!selectedCategory && allCategories.length > 0) {
-            setSelectedCategory(allCategories[0]);
+        const categoryFromUrl = searchParams.get('category');
+
+        if (allCategories.length > 0) {
+            // If URL has valid category, select it
+            if (categoryFromUrl) {
+                const matchedCategory = allCategories.find(c => c.toLowerCase() === categoryFromUrl.toLowerCase());
+                if (matchedCategory) {
+                    if (selectedCategory !== matchedCategory) {
+                        setSelectedCategory(matchedCategory);
+                    }
+                } else {
+                    // URL category invalid, defaulted to first available (optional: redirect to replace URL)
+                    if (!selectedCategory) setSelectedCategory(allCategories[0]);
+                }
+            } else {
+                // No URL category, default to first available
+                if (!selectedCategory) {
+                    setSelectedCategory(allCategories[0]);
+                }
+            }
         }
-    }, [allCategories, selectedCategory]);
+    }, [allCategories, searchParams, selectedCategory]);
+
+    const handleCategoryClick = (category) => {
+        setSearchParams({ category: category.toLowerCase() });
+        setSelectedCategory(category);
+    };
 
     const displayedCategories = selectedCategory ? [selectedCategory] : [];
 
@@ -128,31 +154,17 @@ const Events = () => {
     return (
         <div className="min-h-screen text-gray-900 pb-20">
             <div className="pt-24 pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-                {/* Year Selector */}
-                {availableYears.length > 0 && (
-                    <div className="flex flex-wrap justify-center gap-2 mb-8">
-                        {availableYears.map((year) => (
-                            <button
-                                key={year}
-                                onClick={() => setSelectedYear(year)}
-                                className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 border
-                                ${selectedYear === year
-                                        ? 'bg-gray-800 text-white border-gray-800'
-                                        : 'bg-white text-gray-600 hover:bg-gray-50 border-gray-200'
-                                    }`}
-                            >
-                                {year}
-                            </button>
-                        ))}
-                    </div>
-                )}
+                {/* <div className="text-center mb-12">
+                    <h1 className="text-4xl font-bold text-gray-900 mb-4">Explore Events</h1>
+                    <p className="text-xl text-gray-600">Discover and participate in various technical and non-technical events.</p>
+                </div> */}
 
                 {/* Category Filter Bar */}
                 <div className="flex flex-wrap justify-center gap-4 mb-16">
                     {allCategories.map((category) => (
                         <button
                             key={category}
-                            onClick={() => setSelectedCategory(category)}
+                            onClick={() => handleCategoryClick(category)}
                             className={`px-6 py-2 rounded-full text-sm font-semibold transition-all duration-300 border backdrop-blur-md
                             ${selectedCategory === category
                                     ? 'bg-blue-600 text-white shadow-lg scale-105 border-blue-600'
@@ -177,68 +189,74 @@ const Events = () => {
                             </h2>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                                {groupedEvents[category]?.map((event) => {
-                                    const registration = myRegistrations.find(r => r.eventId === event.id);
-                                    const isRegistered = !!registration;
-                                    const isApproved = registration?.status === 'approved';
+                                {(!groupedEvents[category] || groupedEvents[category].length === 0) ? (
+                                    <div className="col-span-full py-12 text-center bg-gray-50/50 rounded-2xl border border-dashed border-gray-300">
+                                        <p className="text-gray-500 text-lg">No events found in this category yet.</p>
+                                    </div>
+                                ) : (
+                                    groupedEvents[category]?.map((event) => {
+                                        const registration = myRegistrations.find(r => r.eventId === event.id);
+                                        const isRegistered = !!registration;
+                                        const isApproved = registration?.status === 'approved';
 
-                                    return (
-                                        <div key={event.id} className="relative group h-full">
-                                            <Link to={`/events/${event.id}`} state={{ from: '/events' }} className="block h-full">
-                                                <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 flex flex-col h-full overflow-hidden">
-                                                    <div className="relative h-48 overflow-hidden">
-                                                        <img
-                                                            src={event.imageUrl || 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?q=80&w=2070&auto=format&fit=crop'}
-                                                            alt={event.title}
-                                                            className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500"
-                                                        />
-                                                        <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-md px-3 py-1 rounded-full text-sm font-bold text-blue-600 shadow-sm">
-                                                            ₹{event.price}
-                                                        </div>
-                                                        <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-md px-3 py-1 rounded-full text-xs font-semibold text-gray-700 capitalize shadow-sm">
-                                                            {event.category}
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="p-6 flex-grow flex flex-col">
-                                                        <div className="flex items-center justify-between mb-3">
-                                                            <div className="flex items-center text-sm text-blue-600 font-medium">
-                                                                <Calendar size={16} className="mr-2" />
-                                                                {new Date(event.date).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
+                                        return (
+                                            <div key={event.id} className="relative group h-full">
+                                                <Link to={`/events/${event.id}`} state={{ from: '/events' }} className="block h-full">
+                                                    <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 flex flex-col h-full overflow-hidden">
+                                                        <div className="relative h-48 overflow-hidden">
+                                                            <img
+                                                                src={event.imageUrl || 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?q=80&w=2070&auto=format&fit=crop'}
+                                                                alt={event.title}
+                                                                className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500"
+                                                            />
+                                                            <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-md px-3 py-1 rounded-full text-sm font-bold text-blue-600 shadow-sm">
+                                                                ₹{event.price}
                                                             </div>
-                                                            {isRegistered && (
-                                                                <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-bold border border-green-200">
-                                                                    Registered
-                                                                </span>
-                                                            )}
+                                                            <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-md px-3 py-1 rounded-full text-xs font-semibold text-gray-700 capitalize shadow-sm">
+                                                                {event.category}
+                                                            </div>
                                                         </div>
 
-                                                        <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors line-clamp-1">
-                                                            {event.title}
-                                                        </h3>
+                                                        <div className="p-6 flex-grow flex flex-col">
+                                                            <div className="flex items-center justify-between mb-3">
+                                                                <div className="flex items-center text-sm text-blue-600 font-medium">
+                                                                    <Calendar size={16} className="mr-2" />
+                                                                    {new Date(event.date).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
+                                                                </div>
+                                                                {isRegistered && (
+                                                                    <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-bold border border-green-200">
+                                                                        Registered
+                                                                    </span>
+                                                                )}
+                                                            </div>
 
-                                                        <p className="text-gray-700 text-sm mb-4 line-clamp-2 flex-grow">
-                                                            {event.description}
-                                                        </p>
+                                                            <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors line-clamp-1">
+                                                                {event.title}
+                                                            </h3>
+
+                                                            <p className="text-gray-700 text-sm mb-4 line-clamp-2 flex-grow">
+                                                                {event.description}
+                                                            </p>
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            </Link>
+                                                </Link>
 
-                                            {/* QR Code Button - Absolute positioned or inside content */}
-                                            {isApproved && (
-                                                <div className="absolute bottom-4 right-4 z-20">
-                                                    <button
-                                                        onClick={(e) => handleShowQR(e, event.id, event.title)}
-                                                        className="flex items-center gap-2 px-3 py-1.5 bg-gray-900 text-white text-xs font-medium rounded-lg shadow-lg hover:bg-black transition-colors transform hover:scale-105"
-                                                        title="View Entry QR"
-                                                    >
-                                                        <QrCode size={14} /> View QR
-                                                    </button>
-                                                </div>
-                                            )}
-                                        </div>
-                                    );
-                                })}
+                                                {/* QR Code Button - Absolute positioned or inside content */}
+                                                {isApproved && (
+                                                    <div className="absolute bottom-4 right-4 z-20">
+                                                        <button
+                                                            onClick={(e) => handleShowQR(e, event.id, event.title)}
+                                                            className="flex items-center gap-2 px-3 py-1.5 bg-gray-900 text-white text-xs font-medium rounded-lg shadow-lg hover:bg-black transition-colors transform hover:scale-105"
+                                                            title="View Entry QR"
+                                                        >
+                                                            <QrCode size={14} /> View QR
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })
+                                )}
                             </div>
                         </div>
                     ))

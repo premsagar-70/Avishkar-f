@@ -14,14 +14,9 @@ const OrganizerDashboard = () => {
     const [events, setEvents] = useState([]);
     const [loading, setLoading] = useState(true);
 
-
     // Modals State
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [editingEvent, setEditingEvent] = useState(null);
-
-    if (loading) {
-        return <DashboardSkeleton />;
-    }
 
     const fetchEvents = async () => {
         if (!currentUser) return;
@@ -52,6 +47,10 @@ const OrganizerDashboard = () => {
 
     if (!currentUser || userRole !== 'organizer') {
         return <div className="p-8 text-center">Access Denied. Organizer privileges required.</div>;
+    }
+
+    if (loading) {
+        return <DashboardSkeleton />;
     }
 
     return (

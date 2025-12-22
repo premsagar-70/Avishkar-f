@@ -302,7 +302,7 @@ const Home = () => {
                                 ))}
                             </div>
                         ) : (
-                            <>
+                            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                                 <EventSection
                                     title="Technical Events"
                                     eventsList={technicalEvents}
@@ -310,6 +310,7 @@ const Home = () => {
                                     userRole={userRole}
                                     handleRegister={handleRegister}
                                     isRegistrationClosed={isRegistrationClosed}
+                                    viewAllLink="/events?category=technical"
                                 />
                                 <EventSection
                                     title="Non-Technical Events"
@@ -318,6 +319,7 @@ const Home = () => {
                                     userRole={userRole}
                                     handleRegister={handleRegister}
                                     isRegistrationClosed={isRegistrationClosed}
+                                    viewAllLink="/events?category=non-technical"
                                 />
                                 <EventSection
                                     title="Spot Events"
@@ -326,14 +328,15 @@ const Home = () => {
                                     userRole={userRole}
                                     handleRegister={handleRegister}
                                     isRegistrationClosed={isRegistrationClosed}
+                                    viewAllLink="/events?category=spot"
                                 />
-                            </>
+                            </div >
                         )}
-                    </div>
+                    </div >
 
                     {/* Footer */}
-                    <Footer />
-                </div>
+                    < Footer />
+                </div >
             )}
         </>
     );
