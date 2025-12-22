@@ -3,10 +3,11 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import RegistrationModal from '../components/RegistrationModal';
-import { ArrowLeft, Calendar, MapPin, Tag, Clock, QrCode, X, Image as ImageIcon, Trash2, Plus, Upload, User, Trophy, Medal, Users, Edit } from 'lucide-react';
+import { ArrowLeft, Calendar, MapPin, Tag, Clock, QrCode, X, Image as ImageIcon, Trash2, Plus, Upload, User, Trophy, Medal, Award, Users, Edit } from 'lucide-react';
 import QRCode from 'react-qr-code';
 import { DetailSkeleton } from '../components/Skeleton';
 import toast from 'react-hot-toast';
+import EventForm from '../components/EventForm';
 
 
 const EventDetails = () => {
@@ -19,12 +20,13 @@ const EventDetails = () => {
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
     const [showQRModal, setShowQRModal] = useState(false);
+    const [showEditModal, setShowEditModal] = useState(false);
     const [deadline, setDeadline] = useState(null);
     const [registrationData, setRegistrationData] = useState(null);
     const [uploading, setUploading] = useState(false);
     const [selectedImage, setSelectedImage] = useState(null); // State for lightbox
     const [showWinnerModal, setShowWinnerModal] = useState(false);
-    const [winnerData, setWinnerData] = useState({ name: '', position: '1st', rollNo: '', department: '', college: '' });
+    const [winnerData, setWinnerData] = useState({ name: '', position: '1st', rollNo: '', department: '', college: '', teamMembers: [] });
     const [participants, setParticipants] = useState([]);
 
     useEffect(() => {
@@ -195,21 +197,34 @@ const EventDetails = () => {
         e.preventDefault();
         try {
             const currentWinners = event.winners || [];
-            const newWinner = { ...winnerData, id: Date.now().toString() };
-            const updatedWinners = [...currentWinners, newWinner];
+            let updatedWinners;
+
+            if (winnerData.id) {
+                // Update existing
+                updatedWinners = currentWinners.map(w => w.id === winnerData.id ? { ...w, ...winnerData } : w);
+            } else {
+                // Create new
+                const newWinner = { ...winnerData, id: Date.now().toString() };
+                updatedWinners = [...currentWinners, newWinner];
+            }
 
             await api.put(`/events/${id}`, {
                 winners: updatedWinners
             });
 
             setEvent(prev => ({ ...prev, winners: updatedWinners }));
-            setWinnerData({ name: '', position: '1st', rollNo: '', department: '', college: '' });
+            setWinnerData({ name: '', position: '1st', rollNo: '', department: '', college: '', teamMembers: [] });
             setShowWinnerModal(false);
-            toast.success('Winner added successfully!');
+            toast.success(winnerData.id ? 'Winner updated!' : 'Winner added successfully!');
         } catch (error) {
             console.error(error);
-            toast.error('Failed to add winner');
+            toast.error('Failed to save winner');
         }
+    };
+
+    const handleEditWinner = (winner) => {
+        setWinnerData(winner);
+        setShowWinnerModal(true);
     };
 
     const fetchParticipants = async () => {
@@ -291,12 +306,6 @@ const EventDetails = () => {
                                             className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-purple-700 transition-colors shadow-lg hover:shadow-xl text-sm"
                                         >
                                             <Users size={18} /> Manage
-                                        </button>
-                                        <button
-                                            onClick={() => setShowEditModal(true)}
-                                            className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-white text-gray-900 border border-gray-200 px-4 py-2 rounded-lg font-semibold hover:bg-gray-50 transition-colors shadow-sm text-sm"
-                                        >
-                                            <Edit size={18} /> Edit
                                         </button>
                                     </div>
                                 )}
@@ -390,7 +399,7 @@ const EventDetails = () => {
                                         )}
                                     </div>
 
-                                    {event.gallery?.length === 0 ? (
+                                    {(!event.gallery || event.gallery.length === 0) ? (
                                         <div className="text-center py-8 bg-gray-50 rounded-xl border border-dashed border-gray-300">
                                             <p className="text-gray-500">No photos added yet.</p>
                                         </div>
@@ -455,28 +464,35 @@ const EventDetails = () => {
                                                         {winner.position === '1st' ? '1' : winner.position === '2nd' ? '2' : '3'}
                                                     </div>
                                                     <div>
-                                                        <h4 className="font-bold text-gray-900 text-lg">{winner.name}</h4>
+                                                        <h4 className="font-bold text-gray-900 text-lg">
+                                                            {winner.name}
+                                                            {winner.teamMembers && winner.teamMembers.length > 0 && (
+                                                                <span className="font-bold text-gray-800">
+                                                                    , {winner.teamMembers.map((tm) => tm.rollNo ? `${tm.name} (${tm.rollNo})` : tm.name).join(', ')}
+                                                                </span>
+                                                            )}
+                                                        </h4>
                                                         <p className="text-sm text-gray-600">{winner.department} • {winner.college || 'N/A'}</p>
-                                                        {winner.teamMembers && winner.teamMembers.length > 0 && (
-                                                            <div className="mt-2">
-                                                                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Team:</p>
-                                                                <ul className="text-sm text-gray-600 list-disc list-inside">
-                                                                    {winner.teamMembers.map((tm, tmi) => (
-                                                                        <li key={tmi}>{tm.name} <span className="text-gray-400">({tm.rollNo})</span></li>
-                                                                    ))}
-                                                                </ul>
-                                                            </div>
-                                                        )}
                                                     </div>
                                                     {winner.position === '1st' && <Medal className="ml-auto text-yellow-500 shrink-0" size={24} />}
-                                                    {winner.position === '2nd' && <Medal className="ml-auto text-gray-400 shrink-0" size={24} />}
+                                                    {winner.position === '2nd' && <Award className="ml-auto text-gray-400 shrink-0" size={24} />}
                                                     {(userRole === 'admin' || userRole === 'organizer') && isEventCompleted && (
-                                                        <button
-                                                            onClick={() => handleDeleteWinner(winner.id)}
-                                                            className="ml-auto text-gray-400 hover:text-red-500 p-2"
-                                                        >
-                                                            <Trash2 size={16} />
-                                                        </button>
+                                                        <div className="flex items-center ml-2">
+                                                            <button
+                                                                onClick={() => handleEditWinner(winner)}
+                                                                className="text-gray-400 hover:text-blue-500 p-2"
+                                                                title="Edit Winner"
+                                                            >
+                                                                <Edit size={16} />
+                                                            </button>
+                                                            <button
+                                                                onClick={() => handleDeleteWinner(winner.id)}
+                                                                className="text-gray-400 hover:text-red-500 p-2"
+                                                                title="Delete Winner"
+                                                            >
+                                                                <Trash2 size={16} />
+                                                            </button>
+                                                        </div>
                                                     )}
                                                 </div>
                                             ))}
@@ -543,6 +559,32 @@ const EventDetails = () => {
                             window.location.reload();
                         }}
                     />
+                )}
+
+                {showEditModal && (
+                    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                        <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+                            <div className="p-6">
+                                <div className="flex justify-between items-center mb-6">
+                                    <h2 className="text-2xl font-bold text-gray-800">Edit Event</h2>
+                                    <button
+                                        onClick={() => setShowEditModal(false)}
+                                        className="text-gray-500 hover:text-gray-700"
+                                    >
+                                        <X size={24} />
+                                    </button>
+                                </div>
+                                <EventForm
+                                    initialData={event}
+                                    onSubmit={() => {
+                                        setShowEditModal(false);
+                                        window.location.reload();
+                                    }}
+                                    isEditing={true}
+                                />
+                            </div>
+                        </div>
+                    </div>
                 )}
 
                 {showQRModal && isRegistered && (
@@ -673,6 +715,57 @@ const EventDetails = () => {
                                             className="w-full border border-gray-300 rounded-lg px-3 py-2"
                                             placeholder="CSE/IT"
                                         />
+                                    </div>
+
+                                    {/* Team Members Section */}
+                                    <div className="border-t border-gray-100 pt-4">
+                                        <div className="flex justify-between items-center mb-2">
+                                            <label className="block text-sm font-medium text-gray-700">Team Members</label>
+                                            <button
+                                                type="button"
+                                                onClick={() => setWinnerData({
+                                                    ...winnerData,
+                                                    teamMembers: [...(winnerData.teamMembers || []), { name: '', department: '' }]
+                                                })}
+                                                className="text-xs flex items-center gap-1 text-blue-600 font-semibold hover:text-blue-700 hover:bg-blue-50 px-2 py-1 rounded"
+                                            >
+                                                <Plus size={14} /> Add Member
+                                            </button>
+                                        </div>
+
+                                        <div className="space-y-3">
+                                            {winnerData.teamMembers?.map((member, idx) => (
+                                                <div key={idx} className="flex gap-2 items-start bg-gray-50 p-2 rounded-lg relative group">
+                                                    <div className="flex-grow">
+                                                        <input
+                                                            type="text"
+                                                            placeholder="Name"
+                                                            value={member.name}
+                                                            onChange={(e) => {
+                                                                const newMembers = [...winnerData.teamMembers];
+                                                                newMembers[idx].name = e.target.value;
+                                                                setWinnerData({ ...winnerData, teamMembers: newMembers });
+                                                            }}
+                                                            className="w-full text-xs border border-gray-300 rounded px-2 py-1.5"
+                                                            required
+                                                        />
+                                                    </div>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            const newMembers = winnerData.teamMembers.filter((_, i) => i !== idx);
+                                                            setWinnerData({ ...winnerData, teamMembers: newMembers });
+                                                        }}
+                                                        className="text-gray-400 hover:text-red-500 p-1"
+                                                    >
+                                                        <X size={16} />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                            {winnerData.teamMembers?.length === 0 && (
+                                                <p className="text-xs text-gray-400 italic text-center py-2">No team members added.</p>
+                                            )}
+                                        </div>
                                     </div>
 
                                     <button

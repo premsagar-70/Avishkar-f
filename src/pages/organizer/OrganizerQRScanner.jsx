@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import QRScanner from '../../components/QRScanner';
 import { useAuth } from '../../context/AuthContext';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, CheckCircle, XCircle, User, Mail, Calendar } from 'lucide-react';
+import { ArrowLeft, CheckCircle, XCircle, User, Mail, Calendar, Users } from 'lucide-react';
 import api from '../../services/api';
 
 const OrganizerQRScanner = () => {

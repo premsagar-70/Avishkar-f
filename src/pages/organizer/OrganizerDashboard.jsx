@@ -23,7 +23,12 @@ const OrganizerDashboard = () => {
         try {
             // Pass organizerId to filter events
             const response = await api.get(`/events?organizerId=${currentUser.uid}`);
-            setEvents(response.data);
+
+            // Sort by Date descending (latest first)
+            const sortedEvents = [...response.data].sort((a, b) => {
+                return new Date(b.date).getTime() - new Date(a.date).getTime();
+            });
+            setEvents(sortedEvents);
         } catch (error) {
             console.error("Failed to fetch events", error);
         } finally {
