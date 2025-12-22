@@ -134,7 +134,9 @@ const Events = () => {
 
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                                 {groupedEvents[category]?.map((event) => {
-                                    const isRegistered = myRegistrations.some(r => r.eventId === event.id);
+                                    const registration = myRegistrations.find(r => r.eventId === event.id);
+                                    const isRegistered = !!registration;
+                                    const isApproved = registration?.status === 'approved';
 
                                     return (
                                         <div key={event.id} className="relative group h-full">
@@ -179,7 +181,7 @@ const Events = () => {
                                             </Link>
 
                                             {/* QR Code Button - Absolute positioned or inside content */}
-                                            {isRegistered && (
+                                            {isApproved && (
                                                 <div className="absolute bottom-4 right-4 z-20">
                                                     <button
                                                         onClick={(e) => handleShowQR(e, event.id, event.title)}

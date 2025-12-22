@@ -147,6 +147,22 @@ const OrganizerQRScanner = () => {
                                         <p className="font-medium text-gray-900">{scannedData.eventTitle || 'Unknown Event'}</p>
                                     </div>
                                 </div>
+                                {scannedData.teamMembers && scannedData.teamMembers.length > 0 && (
+                                    <div className="flex items-start">
+                                        <Users size={20} className="text-gray-400 mt-1 mr-3" />
+                                        <div className="w-full">
+                                            <p className="text-sm text-gray-500 mb-1">Team Members ({scannedData.teamMembers.length})</p>
+                                            <ul className="bg-white rounded-md border border-gray-200 divide-y divide-gray-100">
+                                                {scannedData.teamMembers.map((tm, idx) => (
+                                                    <li key={idx} className="p-2 text-sm flex justify-between items-center">
+                                                        <span className="font-medium text-gray-800">{tm.name}</span>
+                                                        <span className="text-gray-400 text-xs">{tm.rollNo}</span>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    </div>
+                                )}
                                 <div className="pt-2 border-t border-gray-200 mt-2">
                                     <p className="text-xs text-gray-400">Registration ID: {scannedData.id}</p>
                                 </div>
