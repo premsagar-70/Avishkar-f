@@ -6,7 +6,10 @@ import { useAuth } from '../context/AuthContext';
 
 const RegistrationModal = ({ event, onClose, onRegistrationSuccess }) => {
     const { currentUser } = useAuth();
-    const [mobile, setMobile] = useState('');
+    const [mobile, setMobile] = useState(currentUser?.mobile || '');
+    const [college, setCollege] = useState(currentUser?.college || '');
+    const [rollNo, setRollNo] = useState(currentUser?.rollNo || '');
+    const [department, setDepartment] = useState(currentUser?.department || '');
     const [paymentScreenshotUrl, setPaymentScreenshotUrl] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -21,6 +24,9 @@ const RegistrationModal = ({ event, onClose, onRegistrationSuccess }) => {
                 userId: currentUser.uid,
                 eventId: event.id,
                 mobile,
+                college,
+                rollNo,
+                department,
                 email: currentUser.email,
                 name: currentUser.displayName || 'Participant',
                 paymentScreenshotUrl,
@@ -56,17 +62,65 @@ const RegistrationModal = ({ event, onClose, onRegistrationSuccess }) => {
                     {error && <div className="bg-red-100 text-red-700 p-3 rounded mb-4">{error}</div>}
 
                     <form onSubmit={handleSubmit} className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-800 mb-1">Full Name</label>
+                                <input
+                                    type="text"
+                                    value={currentUser.displayName || ''}
+                                    disabled
+                                    className="w-full border border-gray-300 rounded-md px-3 py-2 bg-gray-100 text-gray-600"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-800 mb-1">Mobile Number</label>
+                                <input
+                                    type="tel"
+                                    required
+                                    pattern="[0-9]{10}"
+                                    placeholder="10-digit mobile number"
+                                    value={mobile}
+                                    onChange={(e) => setMobile(e.target.value)}
+                                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                                />
+                            </div>
+                        </div>
+
                         <div>
-                            <label className="block text-sm font-medium text-gray-800 mb-1">Mobile Number</label>
+                            <label className="block text-sm font-medium text-gray-800 mb-1">College/Institution Name</label>
                             <input
-                                type="tel"
+                                type="text"
                                 required
-                                pattern="[0-9]{10}"
-                                placeholder="10-digit mobile number"
-                                value={mobile}
-                                onChange={(e) => setMobile(e.target.value)}
+                                placeholder="Enter your college name"
+                                value={college}
+                                onChange={(e) => setCollege(e.target.value)}
                                 className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
                             />
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-800 mb-1">Roll Number</label>
+                                <input
+                                    type="text"
+                                    required
+                                    placeholder="e.g. 21IT101"
+                                    value={rollNo}
+                                    onChange={(e) => setRollNo(e.target.value)}
+                                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-800 mb-1">Department</label>
+                                <input
+                                    type="text"
+                                    required
+                                    placeholder="e.g. Information Technology"
+                                    value={department}
+                                    onChange={(e) => setDepartment(e.target.value)}
+                                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                                />
+                            </div>
                         </div>
 
                         {/* Payment Section */}

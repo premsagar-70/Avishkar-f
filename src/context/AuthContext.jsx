@@ -54,6 +54,10 @@ export const AuthProvider = ({ children }) => {
                         setUserRole(role);
                         // Attach custom data to currentUser object or separate state
                         user.organizerRequest = userData.organizerRequest || userData.conductorRequest;
+                        user.mobile = userData.mobile || '';
+                        user.college = userData.college || '';
+                        user.rollNo = userData.rollNo || '';
+                        user.department = userData.department || '';
                     } else {
                         // Default role or handle new user
                         setUserRole('participant');

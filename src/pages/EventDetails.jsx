@@ -3,7 +3,7 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import RegistrationModal from '../components/RegistrationModal';
-import { ArrowLeft, Calendar, MapPin, Tag, Clock, QrCode, X, Image as ImageIcon, Trash2, Plus, Upload, User } from 'lucide-react';
+import { ArrowLeft, Calendar, MapPin, Tag, Clock, QrCode, X, Image as ImageIcon, Trash2, Plus, Upload, User, Trophy, Medal } from 'lucide-react';
 import QRCode from 'react-qr-code';
 import { DetailSkeleton } from '../components/Skeleton';
 import toast from 'react-hot-toast';
@@ -23,6 +23,8 @@ const EventDetails = () => {
     const [registrationData, setRegistrationData] = useState(null);
     const [uploading, setUploading] = useState(false);
     const [selectedImage, setSelectedImage] = useState(null); // State for lightbox
+    const [showWinnerModal, setShowWinnerModal] = useState(false);
+    const [winnerData, setWinnerData] = useState({ name: '', position: '1st', rollNo: '', department: '' });
 
     useEffect(() => {
         const fetchEventAndSettings = async () => {
@@ -188,19 +190,51 @@ const EventDetails = () => {
         }
     };
 
+    const handleWinnerSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            const currentWinners = event.winners || [];
+            const newWinner = { ...winnerData, id: Date.now().toString() };
+            const updatedWinners = [...currentWinners, newWinner];
+
+            await api.put(`/events/${id}`, {
+                winners: updatedWinners
+            });
+
+            setEvent(prev => ({ ...prev, winners: updatedWinners }));
+            setWinnerData({ name: '', position: '1st', rollNo: '', department: '' });
+            setShowWinnerModal(false);
+            toast.success('Winner added successfully!');
+        } catch (error) {
+            console.error(error);
+            toast.error('Failed to add winner');
+        }
+    };
+
+    const handleDeleteWinner = async (winnerId) => {
+        if (!window.confirm('Remove this winner?')) return;
+        try {
+            const updatedWinners = event.winners.filter(w => w.id !== winnerId);
+            await api.put(`/events/${id}`, { winners: updatedWinners });
+            setEvent(prev => ({ ...prev, winners: updatedWinners }));
+            toast.success('Winner removed');
+        } catch (error) {
+            toast.error('Failed to remove winner');
+        }
+    };
+
     const handleBack = () => {
         if (location.state?.from) {
             navigate(location.state.from);
         } else {
-            // If no state history (direct link or refresh), default to events
-            // The user requested: only if prev page is login/register go to Events? 
-            // If I don't have state, I can't know for sure. 
-            // But if I use navigate(-1), it's risky if the history is empty or external.
-            // Using /events as safe fallback is standard.
-            // However, to satisfy "otherwise land in previous page", navigate(-1) is the closest native "Back".
-            // But if previous page was Login, -1 goes to Login -> Redirect Loop or Home/Dashboard.
-            // I will stick to location.state for explicit "From Home" knowledge, and fallback to /events.
-            navigate('/events');
+            // Fallback Logic
+            if (userRole === 'organizer') {
+                navigate('/organizer');
+            } else if (userRole === 'admin') {
+                navigate('/admin');
+            } else {
+                navigate('/events');
+            }
         }
     };
 
@@ -296,15 +330,14 @@ const EventDetails = () => {
                             )}
 
                             {/* Event Gallery Section */}
-                            {(event.gallery?.length > 0 || ((userRole === 'admin' || userRole === 'organizer') && isEventCompleted)) && (
-                                <div className="mb-12">
-                                    <div className="flex items-center justify-between mb-6">
-                                        <h3 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                                            <ImageIcon className="text-blue-600" /> Event Gallery
+                            {(isEventCompleted || event.gallery?.length > 0) && (
+                                <div className="mb-8">
+                                    <div className="flex justify-between items-center mb-4">
+                                        <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                                            <ImageIcon size={20} className="text-blue-600" /> Event Gallery
                                         </h3>
-                                        {/* Upload Button */}
                                         {(userRole === 'admin' || userRole === 'organizer') && isEventCompleted && (
-                                            <div className="relative">
+                                            <div>
                                                 <input
                                                     type="file"
                                                     id="gallery-upload"
@@ -315,23 +348,17 @@ const EventDetails = () => {
                                                 />
                                                 <label
                                                     htmlFor="gallery-upload"
-                                                    className={`flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-full font-semibold cursor-pointer border border-blue-100 hover:bg-blue-100 transition-colors ${uploading ? 'opacity-50 cursor-wait' : ''}`}
+                                                    className="flex items-center gap-1.5 text-sm font-semibold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-200 cursor-pointer hover:bg-blue-100 transition-colors"
                                                 >
-                                                    {uploading ? (
-                                                        <>Processing...</>
-                                                    ) : (
-                                                        <>
-                                                            <Plus size={18} /> Add Photo
-                                                        </>
-                                                    )}
+                                                    {uploading ? 'Uploading...' : <><Plus size={16} /> Add Photo</>}
                                                 </label>
                                             </div>
                                         )}
                                     </div>
 
-                                    {(!event.gallery || event.gallery.length === 0) ? (
-                                        <div className="text-center py-10 bg-gray-50 rounded-xl border-dashed border-2 border-gray-200">
-                                            <p className="text-gray-500">No photos uploaded yet. Add some memories!</p>
+                                    {event.gallery?.length === 0 ? (
+                                        <div className="text-center py-8 bg-gray-50 rounded-xl border border-dashed border-gray-300">
+                                            <p className="text-gray-500">No photos added yet.</p>
                                         </div>
                                     ) : (
                                         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -347,6 +374,61 @@ const EventDetails = () => {
                                                             onClick={(e) => handleDeleteImage(e, img)}
                                                             className="absolute top-2 right-2 p-1.5 bg-red-500/80 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 backdrop-blur-sm"
                                                             title="Delete Photo"
+                                                        >
+                                                            <Trash2 size={16} />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* Winners Section */}
+                            {(isEventCompleted || (event.winners && event.winners.length > 0)) && (
+                                <div className="mb-0">
+                                    <div className="flex justify-between items-center mb-6">
+                                        <h3 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                                            <Trophy size={24} className="text-yellow-500" /> Event Winners
+                                        </h3>
+                                        {(userRole === 'admin' || userRole === 'organizer') && isEventCompleted && (
+                                            <button
+                                                onClick={() => setShowWinnerModal(true)}
+                                                className="flex items-center gap-1.5 text-sm font-semibold text-white bg-yellow-500 px-3 py-1.5 rounded-lg shadow-sm hover:bg-yellow-600 transition-colors"
+                                            >
+                                                <Plus size={16} /> Add Winner
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    {(!event.winners || event.winners.length === 0) ? (
+                                        <div className="text-center py-8 bg-yellow-50/50 rounded-xl border border-dashed border-yellow-200">
+                                            <Trophy size={48} className="mx-auto text-yellow-200 mb-2" />
+                                            <p className="text-yellow-700 font-medium">Winners not announced yet.</p>
+                                        </div>
+                                    ) : (
+                                        <div className="grid grid-cols-1 gap-4">
+                                            {event.winners.map((winner, idx) => (
+                                                <div key={idx} className={`relative flex items-center p-4 rounded-xl border ${winner.position === '1st' ? 'bg-gradient-to-r from-yellow-50 to-white border-yellow-200 shadow-sm' :
+                                                    winner.position === '2nd' ? 'bg-gradient-to-r from-gray-50 to-white border-gray-200' :
+                                                        'bg-gradient-to-r from-orange-50 to-white border-orange-200'
+                                                    }`}>
+                                                    <div className={`w-12 h-12 flex items-center justify-center rounded-full mr-4 font-bold text-xl ${winner.position === '1st' ? 'bg-yellow-100 text-yellow-600' :
+                                                        winner.position === '2nd' ? 'bg-gray-100 text-gray-600' :
+                                                            'bg-orange-100 text-orange-600'
+                                                        }`}>
+                                                        {winner.position === '1st' ? '1' : winner.position === '2nd' ? '2' : '3'}
+                                                    </div>
+                                                    <div>
+                                                        <h4 className="font-bold text-gray-900 text-lg">{winner.name}</h4>
+                                                        <p className="text-sm text-gray-600">{winner.department} • {winner.college || 'N/A'}</p>
+                                                    </div>
+                                                    {winner.position === '1st' && <Medal className="ml-auto text-yellow-500" size={24} />}
+                                                    {(userRole === 'admin' || userRole === 'organizer') && isEventCompleted && (
+                                                        <button
+                                                            onClick={() => handleDeleteWinner(winner.id)}
+                                                            className="ml-auto text-gray-400 hover:text-red-500 p-2"
                                                         >
                                                             <Trash2 size={16} />
                                                         </button>
@@ -458,6 +540,76 @@ const EventDetails = () => {
                             className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
                             onClick={(e) => e.stopPropagation()} // Prevent close on image click
                         />
+                    </div>
+                )}
+
+                {/* Add Winner Modal */}
+                {showWinnerModal && (
+                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                        <div className="bg-white rounded-xl shadow-xl w-full max-w-sm relative animate-fade-in-up">
+                            <button
+                                onClick={() => setShowWinnerModal(false)}
+                                className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
+                            >
+                                <X size={20} />
+                            </button>
+                            <div className="p-6">
+                                <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
+                                    <Trophy size={20} className="text-yellow-500" /> Add Winner
+                                </h3>
+                                <form onSubmit={handleWinnerSubmit} className="space-y-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Position</label>
+                                        <select
+                                            value={winnerData.position}
+                                            onChange={(e) => setWinnerData({ ...winnerData, position: e.target.value })}
+                                            className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                                        >
+                                            <option value="1st">1st Place</option>
+                                            <option value="2nd">2nd Place</option>
+                                            <option value="3rd">3rd Place</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Winner Name</label>
+                                        <input
+                                            type="text"
+                                            required
+                                            value={winnerData.name}
+                                            onChange={(e) => setWinnerData({ ...winnerData, name: e.target.value })}
+                                            className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                                            placeholder="John Doe"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">College</label>
+                                        <input
+                                            type="text"
+                                            value={winnerData.college}
+                                            onChange={(e) => setWinnerData({ ...winnerData, college: e.target.value })}
+                                            className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                                            placeholder="Institute Name"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
+                                        <input
+                                            type="text"
+                                            value={winnerData.department}
+                                            onChange={(e) => setWinnerData({ ...winnerData, department: e.target.value })}
+                                            className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                                            placeholder="CSE/IT"
+                                        />
+                                    </div>
+                                    <button
+                                        type="submit"
+                                        className="w-full bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+                                    >
+                                        Save Winner
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
                     </div>
                 )}
             </div>
