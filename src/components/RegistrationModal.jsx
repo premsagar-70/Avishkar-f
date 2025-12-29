@@ -14,6 +14,53 @@ const RegistrationModal = ({ event, onClose, onRegistrationSuccess }) => {
     const [paymentScreenshotUrl, setPaymentScreenshotUrl] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [organizerDetails, setOrganizerDetails] = useState({});
+
+    React.useEffect(() => {
+        const fetchOrganizerDetails = async () => {
+            let targetOrganizerId = null;
+
+            if (event.enableMultiDepartment && event.departmentOrganizers) {
+                if (department && event.departmentOrganizers[department]) {
+                    targetOrganizerId = event.departmentOrganizers[department];
+                    console.log("Selected Dept:", department, "Mapped to Organizer ID:", targetOrganizerId);
+                }
+            } else {
+                targetOrganizerId = event.assignedTo;
+                console.log("Single Dept Event, Assigned User:", targetOrganizerId);
+            }
+
+            // Fallback to creator if no assigned organizer
+            if (!targetOrganizerId && !event.enableMultiDepartment) {
+                targetOrganizerId = event.createdBy;
+            }
+
+            if (targetOrganizerId) {
+                try {
+                    console.log("Fetching details for:", targetOrganizerId);
+                    const response = await api.get(`/users/${targetOrganizerId}`);
+                    console.log("Organizer API Response:", response.data);
+                    if (response.data) {
+                        setOrganizerDetails({
+                            name: response.data.name || '',
+                            email: response.data.email || '',
+                            mobile: response.data.mobileNumber || '',
+                            upiId: response.data.upiId || ''
+                        });
+                    } else {
+                        setOrganizerDetails({});
+                    }
+                } catch (error) {
+                    console.error("Failed to fetch organizer details", error);
+                    setOrganizerDetails({});
+                }
+            } else {
+                setOrganizerDetails({});
+            }
+        };
+
+        fetchOrganizerDetails();
+    }, [event, department]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -112,14 +159,28 @@ const RegistrationModal = ({ event, onClose, onRegistrationSuccess }) => {
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-800 mb-1">Department</label>
-                                <input
-                                    type="text"
-                                    required
-                                    placeholder="e.g. Information Technology"
-                                    value={department}
-                                    onChange={(e) => setDepartment(e.target.value)}
-                                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
-                                />
+                                {event.enableMultiDepartment && event.departmentOrganizers ? (
+                                    <select
+                                        value={department}
+                                        onChange={(e) => setDepartment(e.target.value)}
+                                        required
+                                        className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                                    >
+                                        <option value="">-- Select Department --</option>
+                                        {Object.keys(event.departmentOrganizers).map(dept => (
+                                            <option key={dept} value={dept}>{dept}</option>
+                                        ))}
+                                    </select>
+                                ) : (
+                                    <input
+                                        type="text"
+                                        required
+                                        placeholder="e.g. Information Technology"
+                                        value={department}
+                                        onChange={(e) => setDepartment(e.target.value)}
+                                        className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                                    />
+                                )}
                             </div>
                         </div>
 
@@ -195,11 +256,16 @@ const RegistrationModal = ({ event, onClose, onRegistrationSuccess }) => {
                         {/* Payment Section */}
                         {(parseInt(event.price) > 0) && (
                             <div className="border-t pt-4">
-                                <h3 className="font-semibold mb-2">Payment Details</h3>
+                                <h3 className="font-semibold mb-2">Organizer Details</h3>
+                                {organizerDetails.name && <p className="text-sm text-gray-700 mb-1">Name: <span className="font-medium">{organizerDetails.name}</span></p>}
+                                {organizerDetails.email && <p className="text-sm text-gray-700 mb-1">Email: <span className="font-medium">{organizerDetails.email}</span></p>}
+                                {organizerDetails.mobile && <p className="text-sm text-gray-700 mb-1">Mobile: <span className="font-medium">{organizerDetails.mobile}</span></p>}
+
+                                <h3 className="font-semibold mb-2 mt-4">Payment Details</h3>
                                 <p className="text-sm text-gray-600 mb-2">Please pay <strong>₹{event.price}</strong> to confirm your seat.</p>
 
-                                {event.upiId && (
-                                    <p className="text-sm text-gray-700 mb-2">UPI ID: <span className="font-mono bg-gray-100 px-2 py-1 rounded">{event.upiId}</span></p>
+                                {organizerDetails.upiId && (
+                                    <p className="text-sm text-gray-700 mb-2">UPI ID: <span className="font-mono bg-gray-100 px-2 py-1 rounded select-all">{organizerDetails.upiId}</span></p>
                                 )}
 
                                 {event.paymentQrCodeUrl && (

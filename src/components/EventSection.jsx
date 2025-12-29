@@ -99,6 +99,11 @@ const EventSection = ({ title, eventsList, currentUser, userRole, handleRegister
                                         <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-md px-4 py-1.5 rounded-full text-sm font-bold text-blue-600 shadow-sm">
                                             ₹{event.price}
                                         </div>
+                                        {event.enableMultiDepartment && (
+                                            <div className="absolute bottom-4 left-4 bg-purple-600/90 backdrop-blur-md px-3 py-1 rounded-full text-xs font-semibold text-white shadow-sm border border-purple-400">
+                                                Multi-Dept
+                                            </div>
+                                        )}
                                     </div>
                                     <div className="p-6">
                                         <h3 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors line-clamp-1">{event.title}</h3>

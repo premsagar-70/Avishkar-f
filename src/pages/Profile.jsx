@@ -14,6 +14,7 @@ const Profile = () => {
         name: '',
         email: '',
         mobileNumber: '',
+        upiId: '',
         role: ''
     });
     const [myRegistrations, setMyRegistrations] = useState([]);
@@ -38,12 +39,20 @@ const Profile = () => {
                 try {
                     const userDoc = await getDoc(doc(db, "users", currentUser.uid));
                     if (userDoc.exists()) {
-                        setUserData(userDoc.data());
+                        const data = userDoc.data();
+                        setUserData({
+                            name: data.name || currentUser.displayName || '',
+                            email: data.email || currentUser.email || '',
+                            mobileNumber: data.mobileNumber || '',
+                            upiId: data.upiId || '',
+                            role: data.role || userRole || 'participant'
+                        });
                     } else {
                         setUserData({
                             name: currentUser.displayName || '',
                             email: currentUser.email || '',
                             mobileNumber: '',
+                            upiId: '',
                             role: userRole || 'participant'
                         });
                     }
@@ -85,8 +94,9 @@ const Profile = () => {
         try {
             const userRef = doc(db, "users", currentUser.uid);
             await updateDoc(userRef, {
-                name: userData.name,
-                mobileNumber: userData.mobileNumber
+                name: userData.name || '',
+                mobileNumber: userData.mobileNumber || '',
+                upiId: userData.upiId || ''
             });
             toast.success("Profile updated successfully!");
         } catch (error) {
@@ -221,6 +231,9 @@ const Profile = () => {
                                     />
                                 </div>
 
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
                                 {/* Mobile Number */}
                                 <div>
                                     <label className="block text-sm font-medium text-gray-800 mb-2 flex items-center gap-2">
@@ -235,6 +248,24 @@ const Profile = () => {
                                         placeholder="+91 9876543210"
                                     />
                                 </div>
+
+                                {/* UPI ID (Organizer only) */}
+                                {userRole === 'organizer' && (
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-800 mb-2 flex items-center gap-2">
+                                            <div className="font-bold text-xs bg-gray-200 px-1 rounded">UPI</div> UPI ID
+                                        </label>
+                                        <input
+                                            type="text"
+                                            name="upiId"
+                                            value={userData.upiId || ''}
+                                            onChange={handleChange}
+                                            className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                                            placeholder="e.g. username@okhdfcbank"
+                                        />
+                                        <p className="text-xs text-gray-500 mt-1">This will be shown to students for payments.</p>
+                                    </div>
+                                )}
                             </div>
 
                             <div className="pt-6 flex justify-end">

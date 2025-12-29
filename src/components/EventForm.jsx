@@ -15,17 +15,19 @@ const EventForm = ({ onEventCreated, initialData = null }) => {
         price: '',
         imageUrl: '',
         assignedTo: '',
-        upiId: '',
         slots: '',
         year: '2026',
         organizerName: '',
         organizerEmail: '',
         organizerMobile: '',
         maxTeamMembers: 1,
+        enableMultiDepartment: false,
+        departmentOrganizers: {} // { "CSE": "uid1", "ECE": "uid2" }
     });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [organizers, setOrganizers] = useState([]);
+    const [availableDepartments, setAvailableDepartments] = useState([]);
 
     // Populate form if initialData is provided (Edit Mode)
     React.useEffect(() => {
@@ -39,15 +41,14 @@ const EventForm = ({ onEventCreated, initialData = null }) => {
                 price: initialData.price || '',
                 imageUrl: initialData.imageUrl || '',
                 assignedTo: initialData.assignedTo || '',
-                upiId: initialData.upiId || '',
                 slots: initialData.slots || '',
                 year: initialData.year || '2026',
                 organizerName: initialData.organizerName || '',
                 organizerEmail: initialData.organizerEmail || '',
-                organizerName: initialData.organizerName || '',
-                organizerEmail: initialData.organizerEmail || '',
                 organizerMobile: initialData.organizerMobile || '',
-                maxTeamMembers: initialData.maxTeamMembers || 1
+                maxTeamMembers: initialData.maxTeamMembers || 1,
+                enableMultiDepartment: initialData.enableMultiDepartment || false,
+                departmentOrganizers: initialData.departmentOrganizers || {}
             });
         } else if (userRole === 'organizer' && currentUser) {
             // Pre-fill for Organizer creating their own event
@@ -60,25 +61,58 @@ const EventForm = ({ onEventCreated, initialData = null }) => {
         }
     }, [initialData, userRole, currentUser]);
 
-    // Fetch organizers if user is admin
+    // Fetch organizers and departments if user is admin
     React.useEffect(() => {
         if (userRole === 'admin') {
-            const fetchOrganizers = async () => {
+            const fetchData = async () => {
                 try {
-                    const response = await api.get('/users');
+                    const [usersResponse, settingsResponse] = await Promise.all([
+                        api.get('/users'),
+                        api.get('/settings')
+                    ]);
+
                     // Filter only organizers
-                    const organizerList = response.data.filter(u => u.role === 'organizer');
+                    const organizerList = usersResponse.data.filter(u => u.role === 'organizer');
                     setOrganizers(organizerList);
+
+                    // Set available departments
+                    if (settingsResponse.data.departments) {
+                        setAvailableDepartments(settingsResponse.data.departments);
+                    }
                 } catch (err) {
-                    console.error("Failed to fetch organizers", err);
+                    console.error("Failed to fetch data", err);
                 }
             };
-            fetchOrganizers();
+            fetchData();
         }
     }, [userRole]);
 
     const handleChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
+        const { name, value, type, checked } = e.target;
+        setFormData({
+            ...formData,
+            [name]: type === 'checkbox' ? checked : value
+        });
+    };
+
+    const handleDepartmentToggle = (dept) => {
+        const updated = { ...formData.departmentOrganizers };
+        if (Object.prototype.hasOwnProperty.call(updated, dept)) {
+            delete updated[dept]; // Remove if unchecked
+        } else {
+            updated[dept] = ''; // Initialize if checked
+        }
+        setFormData({ ...formData, departmentOrganizers: updated });
+    };
+
+    const handleDepartmentOrganizerChange = (dept, organizerId) => {
+        setFormData({
+            ...formData,
+            departmentOrganizers: {
+                ...formData.departmentOrganizers,
+                [dept]: organizerId
+            }
+        });
     };
 
     const handleImageUploaded = (url) => {
@@ -95,17 +129,32 @@ const EventForm = ({ onEventCreated, initialData = null }) => {
         setError('');
 
         try {
+            // Calculate all involved organizer IDs for easy querying
+            const orgIds = new Set();
+            if (formData.assignedTo) orgIds.add(formData.assignedTo);
+            if (formData.departmentOrganizers) {
+                Object.values(formData.departmentOrganizers).forEach(uid => {
+                    if (uid) orgIds.add(uid);
+                });
+            }
+            // If creator is organizer, add them too (though usually covered by assignedTo or logic)
+            if (userRole === 'organizer' && currentUser?.uid) {
+                orgIds.add(currentUser.uid);
+            }
+
+            const payload = {
+                ...formData,
+                organizerIds: Array.from(orgIds),
+                role: userRole
+            };
+
             if (initialData) {
                 // Update existing event
-                await api.put(`/events/${initialData.id}`, {
-                    ...formData,
-                    role: userRole // Pass role for permission check if needed
-                });
+                await api.put(`/events/${initialData.id}`, payload);
             } else {
                 // Create new event
                 await api.post('/events', {
-                    ...formData,
-                    role: userRole,
+                    ...payload,
                     createdBy: currentUser?.uid
                 });
             }
@@ -121,15 +170,14 @@ const EventForm = ({ onEventCreated, initialData = null }) => {
                     price: '',
                     imageUrl: '',
                     assignedTo: '',
-                    upiId: '',
                     slots: '',
                     year: '2026',
                     organizerName: '',
                     organizerEmail: '',
-                    organizerName: '',
-                    organizerEmail: '',
                     organizerMobile: '',
-                    maxTeamMembers: 1
+                    maxTeamMembers: 1,
+                    enableMultiDepartment: false,
+                    departmentOrganizers: {}
                 });
             }
         } catch (err) {
@@ -145,6 +193,7 @@ const EventForm = ({ onEventCreated, initialData = null }) => {
             <h2 className="text-xl font-bold mb-4">{initialData ? 'Edit Event' : 'Create New Event'}</h2>
             {error && <p className="text-red-500 mb-4">{error}</p>}
             <form onSubmit={handleSubmit} className="space-y-4">
+                {/* ... (existing fields: Title, Description) ... */}
                 <div>
                     <label className="block text-sm font-medium text-gray-700">Event Title</label>
                     <input
@@ -169,9 +218,8 @@ const EventForm = ({ onEventCreated, initialData = null }) => {
                     />
                 </div>
 
-
-
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* ... (existing fields: Date, Category, Venue, Slots, MaxTeam, Price) ... */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700">Date</label>
                         <input
@@ -247,21 +295,71 @@ const EventForm = ({ onEventCreated, initialData = null }) => {
 
                 {/* Organizer Assignment - Only for Admins */}
                 {userRole === 'admin' && (
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700">Assign Organizer (Optional)</label>
-                        <select
-                            name="assignedTo"
-                            value={formData.assignedTo}
-                            onChange={handleChange}
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2"
-                        >
-                            <option value="">-- Select Organizer --</option>
-                            {organizers.map(organizer => (
-                                <option key={organizer.uid} value={organizer.uid}>
-                                    {organizer.name || organizer.displayName} ({organizer.email})
-                                </option>
-                            ))}
-                        </select>
+                    <div className="border border-indigo-100 bg-indigo-50 p-4 rounded-lg">
+                        <label className="flex items-center gap-2 mb-4 font-semibold text-indigo-900">
+                            <input
+                                type="checkbox"
+                                name="enableMultiDepartment"
+                                checked={formData.enableMultiDepartment}
+                                onChange={handleChange}
+                                className="w-5 h-5 text-indigo-600 rounded focus:ring-indigo-500 border-gray-300"
+                            />
+                            Enable Multi-Department Event
+                        </label>
+
+                        {formData.enableMultiDepartment ? (
+                            <div className="space-y-4 animate-fade-in-up">
+                                <p className="text-sm text-indigo-700">Select participating departments and assign an organizer for each.</p>
+                                <div className="grid grid-cols-1 gap-3">
+                                    {availableDepartments.map(dept => (
+                                        <div key={dept} className="flex items-center gap-4 bg-white p-3 rounded-md shadow-sm border border-indigo-100">
+                                            <label className="flex items-center gap-2 min-w-[150px] font-medium text-gray-700">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={!!formData.departmentOrganizers.hasOwnProperty(dept)}
+                                                    onChange={() => handleDepartmentToggle(dept)}
+                                                    className="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500 border-gray-300"
+                                                />
+                                                {dept}
+                                            </label>
+
+                                            {formData.departmentOrganizers.hasOwnProperty(dept) && (
+                                                <select
+                                                    value={formData.departmentOrganizers[dept]}
+                                                    onChange={(e) => handleDepartmentOrganizerChange(dept, e.target.value)}
+                                                    className="flex-grow text-sm border-gray-300 rounded-md focus:border-indigo-500 focus:ring-indigo-500 border p-2"
+                                                    required
+                                                >
+                                                    <option value="">-- Assign Organizer --</option>
+                                                    {organizers.map(org => (
+                                                        <option key={org.uid} value={org.uid}>
+                                                            {org.name || org.displayName} ({org.email})
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        ) : (
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">Assign Organizer (Optional)</label>
+                                <select
+                                    name="assignedTo"
+                                    value={formData.assignedTo}
+                                    onChange={handleChange}
+                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 border p-2"
+                                >
+                                    <option value="">-- Select Organizer --</option>
+                                    {organizers.map(organizer => (
+                                        <option key={organizer.uid} value={organizer.uid}>
+                                            {organizer.name || organizer.displayName} ({organizer.email})
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
                     </div>
                 )}
 

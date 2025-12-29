@@ -21,7 +21,7 @@ const OrganizerDashboard = () => {
     const fetchEvents = async () => {
         if (!currentUser) return;
         try {
-            // Pass organizerId to filter events
+            // Pass organizerId query param. The backend should handle looking up in 'organizerIds' array.
             const response = await api.get(`/events?organizerId=${currentUser.uid}`);
 
             // Sort by Date descending (latest first)

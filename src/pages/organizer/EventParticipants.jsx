@@ -14,13 +14,55 @@ const EventParticipants = () => {
     const [error, setError] = useState('');
     const [filter, setFilter] = useState('all');
     const [searchTerm, setSearchTerm] = useState('');
+    const [viewAccess, setViewAccess] = useState('loading'); // 'all', 'specific', 'none', 'loading'
+    const [assignedDepartment, setAssignedDepartment] = useState(null);
 
     useEffect(() => {
         const fetchParticipants = async () => {
             try {
-                // Fetch Event Details for Title
+                // Fetch Event Details for Title and Multi-Dept Logic
                 const eventResponse = await api.get(`/events/${eventId}`);
-                setEventTitle(eventResponse.data.title);
+                const eventData = eventResponse.data;
+                const baseTitle = eventData.title;
+
+                console.log("CurrentUser:", currentUser);
+
+                let access = 'none';
+                let dept = null;
+
+                const isMainOrganizer =
+                    currentUser.uid === eventData.createdBy ||
+                    currentUser.uid === eventData.assignedTo ||
+                    currentUser.role === 'admin';
+
+                if (isMainOrganizer) {
+                    access = 'all';
+                    setEventTitle(baseTitle);
+                } else if (eventData.enableMultiDepartment && eventData.departmentOrganizers) {
+                    // Check if user is a department organizer
+                    dept = Object.keys(eventData.departmentOrganizers).find(
+                        key => eventData.departmentOrganizers[key] === currentUser.uid
+                    );
+
+                    if (dept) {
+                        access = 'specific';
+                        setAssignedDepartment(dept);
+                        setEventTitle(`${baseTitle} (${dept})`);
+                    } else {
+                        // User is organizer but not linked to this event in any way (should ideally not happen if they reached here via dashboard)
+                        // But for security, show NONE.
+                        access = 'none';
+                        console.warn("Organizer accessed event participants but is not assigned to any dept.");
+                    }
+                } else {
+                    // Fallback for single events where user might have access via other means (e.g. historical)
+                    // But if they are not MainOrganizer, they probably shouldn't be here?
+                    // Let's assume 'none' for safety unless they are main.
+                    access = 'none';
+                }
+
+                console.log(`Access determined: ${access}, Dept: ${dept}`);
+                setViewAccess(access);
 
                 // Fetch Participants
                 const response = await api.get(`/registrations/event/${eventId}`);
@@ -38,26 +80,26 @@ const EventParticipants = () => {
         }
     }, [eventId, currentUser]);
 
-    const handleStatusUpdate = async (registrationId, newStatus) => {
-        try {
-            await api.put(`/registrations/${registrationId}/status`, { status: newStatus });
-            setParticipants(participants.map(p =>
-                p.id === registrationId ? { ...p, status: newStatus } : p
-            ));
-        } catch (err) {
-            console.error("Error updating status:", err);
-            alert('Failed to update status');
-        }
-    };
+    // ... handleStatusUpdate ...
 
     const filteredParticipants = participants.filter(p => {
+        if (viewAccess === 'none') return false;
+
         const matchesFilter = filter === 'all' || p.status === filter;
         const matchesSearch =
             p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             p.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
             (p.rollNo && p.rollNo.toLowerCase().includes(searchTerm.toLowerCase())) ||
             (p.college && p.college.toLowerCase().includes(searchTerm.toLowerCase()));
-        return matchesFilter && matchesSearch;
+
+        // Debug log (can remove later)
+        // console.log(`Checking ${p.name}: AssignedDept=${assignedDepartment}, UserDept=${p.department}`);
+
+        const matchesDept = (viewAccess === 'specific' && assignedDepartment)
+            ? p.department === assignedDepartment
+            : true;
+
+        return matchesFilter && matchesSearch && matchesDept;
     });
 
     if (loading) return (
