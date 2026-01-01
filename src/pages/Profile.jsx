@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { auth, db } from '../firebase';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
-import { User, Mail, Phone, Shield, Save, Loader, QrCode, X, Calendar, Edit, Lock } from 'lucide-react';
+import { User, Mail, Phone, Shield, Save, Loader, QrCode, X, Calendar, Edit, Lock, Eye, EyeOff } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../services/api';
 import QRCode from 'react-qr-code';
@@ -33,6 +33,15 @@ const Profile = () => {
     const [selectedQRData, setSelectedQRData] = useState(null);
     const [selectedEventTitle, setSelectedEventTitle] = useState('');
     const [forcePasswordView, setForcePasswordView] = useState(false);
+    const [showPasswords, setShowPasswords] = useState({
+        current: false,
+        new: false,
+        confirm: false
+    });
+
+    const togglePasswordVisibility = (field) => {
+        setShowPasswords(prev => ({ ...prev, [field]: !prev[field] }));
+    };
 
     useEffect(() => {
         if (userRole === 'participant') {
@@ -313,34 +322,61 @@ const Profile = () => {
                                         {(currentUser?.providerData.some(p => p.providerId === 'password') || forcePasswordView) && (
                                             <div>
                                                 <label className="block text-sm font-medium text-gray-700 mb-1">Current Password</label>
-                                                <input
-                                                    type="password"
-                                                    value={passwords.current}
-                                                    onChange={(e) => setPasswords({ ...passwords, current: e.target.value })}
-                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                                                    placeholder="Current Password"
-                                                />
+                                                <div className="relative">
+                                                    <input
+                                                        type={showPasswords.current ? "text" : "password"}
+                                                        value={passwords.current}
+                                                        onChange={(e) => setPasswords({ ...passwords, current: e.target.value })}
+                                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm pr-10"
+                                                        placeholder="Current Password"
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => togglePasswordVisibility('current')}
+                                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
+                                                    >
+                                                        {showPasswords.current ? <EyeOff size={16} /> : <Eye size={16} />}
+                                                    </button>
+                                                </div>
                                             </div>
                                         )}
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-1">New Password</label>
-                                            <input
-                                                type="password"
-                                                value={passwords.new}
-                                                onChange={(e) => setPasswords({ ...passwords, new: e.target.value })}
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                                                placeholder="New Password"
-                                            />
+                                            <div className="relative">
+                                                <input
+                                                    type={showPasswords.new ? "text" : "password"}
+                                                    value={passwords.new}
+                                                    onChange={(e) => setPasswords({ ...passwords, new: e.target.value })}
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm pr-10"
+                                                    placeholder="New Password"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => togglePasswordVisibility('new')}
+                                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
+                                                >
+                                                    {showPasswords.new ? <EyeOff size={16} /> : <Eye size={16} />}
+                                                </button>
+                                            </div>
                                         </div>
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-1">Confirm New</label>
-                                            <input
-                                                type="password"
-                                                value={passwords.confirm}
-                                                onChange={(e) => setPasswords({ ...passwords, confirm: e.target.value })}
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                                                placeholder="Confirm New Password"
-                                            />
+                                            <div className="relative">
+                                                <input
+                                                    type={showPasswords.confirm ? "text" : "password"}
+                                                    value={passwords.confirm}
+                                                    onChange={(e) => setPasswords({ ...passwords, confirm: e.target.value })}
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm pr-10"
+                                                    placeholder="Confirm New Password"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => togglePasswordVisibility('confirm')}
+                                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
+                                                >
+                                                    {showPasswords.confirm ? <EyeOff size={16} /> : <Eye size={16} />}
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
                                     <div className="mt-3 text-right">
