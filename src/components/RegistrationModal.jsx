@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 
 const RegistrationModal = ({ event, onClose, onRegistrationSuccess }) => {
     const { currentUser } = useAuth();
+    const [name, setName] = useState(currentUser?.name || currentUser?.displayName || '');
     const [mobile, setMobile] = useState(currentUser?.mobile || '');
     const [college, setCollege] = useState(currentUser?.college || '');
     const [rollNo, setRollNo] = useState(currentUser?.rollNo || '');
@@ -75,8 +76,9 @@ const RegistrationModal = ({ event, onClose, onRegistrationSuccess }) => {
                 college,
                 rollNo,
                 department,
+                department,
                 email: currentUser.email,
-                name: currentUser.displayName || 'Participant',
+                name: name, // User provided name
                 teamMembers,
                 paymentScreenshotUrl,
                 status: 'pending' // Default status until organizer approves
@@ -114,9 +116,10 @@ const RegistrationModal = ({ event, onClose, onRegistrationSuccess }) => {
                                 <label className="block text-sm font-medium text-gray-800 mb-1">Full Name</label>
                                 <input
                                     type="text"
-                                    value={currentUser.displayName || ''}
-                                    disabled
-                                    className="w-full border border-gray-300 rounded-md px-3 py-2 bg-gray-100 text-gray-600"
+                                    value={name}
+                                    placeholder="Enter your full name"
+                                    onChange={(e) => setName(e.target.value)}
+                                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
                                 />
                             </div>
                             <div>

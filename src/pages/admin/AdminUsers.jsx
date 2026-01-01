@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
-import { Check, X, Shield, User, Search } from 'lucide-react';
+import { Check, X, Shield, User, Search, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const AdminUsers = () => {
@@ -49,6 +49,18 @@ const AdminUsers = () => {
         } catch (error) {
             console.error("Failed to reject request", error);
             toast.error("Failed to reject request");
+        }
+    };
+
+    const handleDeleteUser = async (uid) => {
+        if (!window.confirm("Are you sure you want to delete this user? This action cannot be undone.")) return;
+        try {
+            await api.delete(`/users/${uid}`);
+            toast.success("User deleted successfully");
+            fetchUsers();
+        } catch (error) {
+            console.error("Failed to delete user", error);
+            toast.error("Failed to delete user");
         }
     };
 
@@ -115,7 +127,7 @@ const AdminUsers = () => {
                                                 {user.email[0].toUpperCase()}
                                             </div>
                                             <div className="ml-4">
-                                                <div className="text-sm font-medium text-gray-900">{user.displayName !== 'N/A' ? user.displayName : 'No Name'}</div>
+                                                <div className="text-sm font-medium text-gray-900">{(user.name || user.displayName || 'No Name').replace('N/A', '') || 'No Name'}</div>
                                                 <div className="text-sm text-gray-500">{user.email}</div>
                                             </div>
                                         </div>
@@ -132,14 +144,25 @@ const AdminUsers = () => {
                                         Active
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                        {user.role !== 'admin' && (
-                                            <button
-                                                onClick={() => handleToggleRole(user)}
-                                                className="text-indigo-600 hover:text-indigo-900"
-                                            >
-                                                {user.role === 'organizer' ? 'Demote to Participant' : 'Promote to Organizer'}
-                                            </button>
-                                        )}
+                                        <div className="flex justify-end gap-3">
+                                            {user.role !== 'admin' && (
+                                                <button
+                                                    onClick={() => handleToggleRole(user)}
+                                                    className="text-indigo-600 hover:text-indigo-900"
+                                                >
+                                                    {user.role === 'organizer' ? 'Demote' : 'Promote'}
+                                                </button>
+                                            )}
+                                            {user.role !== 'admin' && (
+                                                <button
+                                                    onClick={() => handleDeleteUser(user.uid)}
+                                                    className="text-red-600 hover:text-red-900"
+                                                    title="Delete User"
+                                                >
+                                                    <Trash2 size={18} />
+                                                </button>
+                                            )}
+                                        </div>
                                     </td>
                                 </tr>
                             ))}
