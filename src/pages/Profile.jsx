@@ -350,10 +350,43 @@ const Profile = () => {
                                             </div>
                                         </>
                                     ) : (
-                                        <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-xl text-sm">
-                                            You are signed in with <strong>{currentUser?.providerData[0]?.providerId === 'google.com' ? 'Google' : 'an external provider'}</strong>.
-                                            You manage your password through their security settings, not here.
-                                        </div>
+                                        <>
+                                            <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-xl text-sm mb-4">
+                                                Set a password to enable logging in with your email address in addition to Google sign-in.
+                                            </div>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-1">New Password</label>
+                                                    <input
+                                                        type="password"
+                                                        value={passwords.new}
+                                                        onChange={(e) => setPasswords({ ...passwords, new: e.target.value })}
+                                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                                                        placeholder="New Password"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-1">Confirm New</label>
+                                                    <input
+                                                        type="password"
+                                                        value={passwords.confirm}
+                                                        onChange={(e) => setPasswords({ ...passwords, confirm: e.target.value })}
+                                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                                                        placeholder="Confirm New Password"
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div className="mt-3 text-right">
+                                                <button
+                                                    type="button"
+                                                    onClick={handlePasswordChange}
+                                                    disabled={passwordUpdating || !passwords.new || !passwords.confirm}
+                                                    className="px-4 py-2 bg-gray-800 text-white rounded-lg text-sm font-medium hover:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                >
+                                                    {passwordUpdating ? 'Setting Password...' : 'Set Password'}
+                                                </button>
+                                            </div>
+                                        </>
                                     )}
                                 </div>
 
