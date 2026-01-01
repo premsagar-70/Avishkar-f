@@ -15,7 +15,9 @@ export const AuthProvider = ({ children }) => {
     const signInWithGoogle = async () => {
         try {
             const result = await signInWithPopup(auth, googleProvider);
+            console.log("AuthContext: signInWithPopup result:", result);
             const user = result.user;
+            console.log("AuthContext: user extracted:", user);
 
             // Check if user exists in Firestore, if not create them
             const userDocRef = doc(db, "users", user.uid);

@@ -65,7 +65,11 @@ const Login = () => {
     const handleGoogleLogin = async () => {
         try {
             const result = await signInWithGoogle();
+            console.log("Google Sign In Result:", result);
             const user = result;
+            if (!user) {
+                throw new Error("No user returned from Google Sign In");
+            }
 
             // Use imported getDoc/db
             const userDoc = await getDoc(doc(db, "users", user.uid));
