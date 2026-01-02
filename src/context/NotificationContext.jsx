@@ -54,11 +54,13 @@ export const NotificationProvider = ({ children }) => {
                     });
 
                     if (currentToken) {
+                        console.log("FCM Token generated:", currentToken);
                         setFcmToken(currentToken);
                         // Save token to user's document
                         await setDoc(doc(db, "users", currentUser.uid), {
                             fcmTokens: arrayUnion(currentToken)
                         }, { merge: true });
+                        console.log("FCM Token saved to Firestore for user:", currentUser.uid);
                     } else {
                         console.log('No registration token available. Request permission to generate one.');
                     }
@@ -80,8 +82,9 @@ export const NotificationProvider = ({ children }) => {
         try {
             const messaging = getMessaging();
             onMessage(messaging, (payload) => {
-                console.log('Message received. ', payload);
-                toast(payload.notification.body, {
+                console.log('[NotificationContext] Foreground Message received: ', payload);
+                toast.success(payload.notification.body, { // Using toast.success for visibility
+                    duration: 5000,
                     icon: '🔔',
                     style: {
                         borderRadius: '10px',
