@@ -54,13 +54,11 @@ export const NotificationProvider = ({ children }) => {
                     });
 
                     if (currentToken) {
-                        console.log("FCM Token generated:", currentToken);
                         setFcmToken(currentToken);
                         // Save token to user's document
                         await setDoc(doc(db, "users", currentUser.uid), {
                             fcmTokens: arrayUnion(currentToken)
                         }, { merge: true });
-                        console.log("FCM Token saved to Firestore for user:", currentUser.uid);
                     } else {
                         console.log('No registration token available. Request permission to generate one.');
                     }
