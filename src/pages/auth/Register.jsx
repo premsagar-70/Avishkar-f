@@ -6,6 +6,7 @@ import { auth, db } from '../../firebase';
 import { useAuth } from '../../context/AuthContext';
 import { Mail, Lock, ArrowRight, ArrowLeft, Quote, Phone, User as UserIcon, Eye, EyeOff } from 'lucide-react';
 import toast from 'react-hot-toast';
+import api from '../../services/api';
 import { motion } from 'framer-motion';
 
 const Register = () => {
@@ -56,6 +57,17 @@ const Register = () => {
                 organizerRequest: requestOrganizer, // Flag for admin approval
                 createdAt: new Date().toISOString()
             });
+
+            // Notify Admins about new user
+            try {
+                await api.post('/users/notify-new-user', {
+                    userId: user.uid,
+                    name: name,
+                    email: user.email
+                });
+            } catch (notifyError) {
+                console.error("Failed to notify admins of new user:", notifyError);
+            }
 
             toast.success("Account created successfully!");
             if (requestOrganizer) {
