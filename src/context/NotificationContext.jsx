@@ -183,7 +183,9 @@ export const NotificationProvider = ({ children }) => {
         unreadCount,
         markAsRead,
         markAllAsRead,
-        fcmToken
+        markAllAsRead,
+        fcmToken,
+        clearToken
     };
 
     return (
