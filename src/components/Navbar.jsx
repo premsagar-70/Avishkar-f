@@ -10,6 +10,7 @@ import { format } from 'date-fns';
 
 const Navbar = () => {
     const { currentUser, userRole } = useAuth();
+    const { unreadCount, markAllAsRead, clearToken } = useNotifications(); // Changed to use clearToken
     const navigate = useNavigate();
     const location = useLocation();
     const [isOpen, setIsOpen] = useState(false);
@@ -20,6 +21,7 @@ const Navbar = () => {
 
     const handleLogout = async () => {
         try {
+            await clearToken(); // Remove token from backend
             await signOut(auth);
             navigate('/login');
             setIsOpen(false);

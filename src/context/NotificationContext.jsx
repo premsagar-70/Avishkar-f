@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { db } from '../firebase';
-import { collection, query, where, orderBy, limit, onSnapshot, updateDoc, doc, setDoc, arrayUnion } from 'firebase/firestore';
+import { collection, query, where, orderBy, limit, onSnapshot, updateDoc, doc, setDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { useAuth } from './AuthContext';
 import { getMessaging, getToken, onMessage } from "firebase/messaging";
 import toast from 'react-hot-toast';
@@ -82,15 +82,20 @@ export const NotificationProvider = ({ children }) => {
             const messaging = getMessaging();
             unsubscribe = onMessage(messaging, (payload) => {
                 console.log('[NotificationContext] Foreground Message received: ', payload);
-                toast.success(payload.notification.body, {
-                    duration: 5000,
-                    icon: '🔔',
-                    style: {
-                        borderRadius: '10px',
-                        background: '#333',
-                        color: '#fff',
-                    },
-                });
+                // Handle data-only payload
+                const { title, body } = payload.data || payload.notification || {};
+
+                if (body) {
+                    toast.success(body, {
+                        duration: 5000,
+                        icon: '🔔',
+                        style: {
+                            borderRadius: '10px',
+                            background: '#333',
+                            color: '#fff',
+                        },
+                    });
+                }
             });
         } catch (err) {
             console.error("FCM Foreground listener error", err);
@@ -159,6 +164,20 @@ export const NotificationProvider = ({ children }) => {
         }
     };
 
+
+    const clearToken = async () => {
+        if (!currentUser || !fcmToken) return;
+        try {
+            await updateDoc(doc(db, "users", currentUser.uid), {
+                fcmTokens: arrayRemove(fcmToken)
+            });
+            setFcmToken(null);
+            console.log("FCM Token removed from Firestore on logout.");
+        } catch (error) {
+            console.error("Error removing FCM token:", error);
+        }
+    };
+
     const value = {
         notifications,
         unreadCount,
@@ -173,3 +192,4 @@ export const NotificationProvider = ({ children }) => {
         </NotificationContext.Provider>
     );
 };
+
