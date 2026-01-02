@@ -40,7 +40,9 @@ const Login = () => {
             toast.success("Welcome back!");
 
             if (userDoc.exists()) {
-                const role = userDoc.data().role;
+                const userData = userDoc.data();
+                const role = userData.role === 'conductor' ? 'organizer' : userData.role;
+
                 if (role === 'admin') {
                     navigate('/admin');
                 } else if (role === 'organizer') {
@@ -74,7 +76,9 @@ const Login = () => {
             toast.success("Signed in with Google!");
 
             if (userDoc.exists()) {
-                const role = userDoc.data().role;
+                const userData = userDoc.data();
+                const role = userData.role === 'conductor' ? 'organizer' : userData.role;
+
                 if (role === 'admin') {
                     navigate('/admin');
                 } else if (role === 'organizer') {

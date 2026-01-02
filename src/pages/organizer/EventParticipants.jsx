@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import toast from 'react-hot-toast';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, User, Users, CheckCircle, XCircle, Clock, Download, ExternalLink, Search } from 'lucide-react';
 import api from '../../services/api';
@@ -80,7 +81,18 @@ const EventParticipants = () => {
         }
     }, [eventId, currentUser]);
 
-    // ... handleStatusUpdate ...
+    const handleStatusUpdate = async (id, newStatus) => {
+        try {
+            await api.put(`/registrations/${id}/status`, { status: newStatus });
+            setParticipants(prev =>
+                prev.map(p => p.id === id ? { ...p, status: newStatus } : p)
+            );
+            toast.success(`Registration ${newStatus}`);
+        } catch (err) {
+            console.error("Failed to update status", err);
+            toast.error("Failed to update status");
+        }
+    };
 
     const filteredParticipants = participants.filter(p => {
         if (viewAccess === 'none') return false;
