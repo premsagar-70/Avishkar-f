@@ -53,10 +53,10 @@ const Login = () => {
                 if (role === 'conductor') role = 'organizer';
 
                 // --- EMERGENCY FIX: FORCE ADMIN ROLE for specific email ---
-                if (user.email === 'admin@aviskhar.com') {
-                    console.warn("Login: Applying Admin Override for admin@aviskhar.com");
-                    role = 'admin';
-                }
+                // if (user.email === 'admin@aviskhar.com') {
+                //     console.warn("Login: Applying Admin Override for admin@aviskhar.com");
+                //     role = 'admin';
+                // }
                 // -------------------------------------------------------------
 
                 console.log(`LOGIN DEBUG: User=${user.email}, RawRole=${userData.role}, Normalized=${role}`);
