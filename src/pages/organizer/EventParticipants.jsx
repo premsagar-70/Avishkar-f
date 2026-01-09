@@ -93,7 +93,7 @@ const EventParticipants = () => {
         }
     };
 
-    const filteredParticipants = participants.filter(p => {
+    const filteredParticipants = Array.isArray(participants) ? participants.filter(p => {
         if (viewAccess === 'none') return false;
 
         const matchesFilter = filter === 'all' || p.status === filter;
@@ -111,7 +111,7 @@ const EventParticipants = () => {
             : true;
 
         return matchesFilter && matchesSearch && matchesDept;
-    });
+    }) : [];
 
     if (loading) return (
         <div className="flex justify-center items-center min-h-screen">

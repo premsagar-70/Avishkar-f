@@ -47,12 +47,12 @@ const AdminEvents = () => {
     }, []);
 
     // Filter events based on selected year
-    const filteredEvents = events.filter(e => {
+    const filteredEvents = Array.isArray(events) ? events.filter(e => {
         if (!selectedYear) return true;
         // Strict date-based filtering to match the displayed Date column
         const eventYear = new Date(e.date).getFullYear().toString();
         return eventYear === selectedYear;
-    });
+    }) : [];
 
     const handleDelete = async (id) => {
         if (window.confirm('Are you sure you want to delete this event?')) {
