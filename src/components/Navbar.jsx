@@ -354,7 +354,7 @@ const NotificationList = () => {
     const { notifications, markAsRead } = useNotifications();
     const navigate = useNavigate();
 
-    if (notifications.length === 0) {
+    if (!Array.isArray(notifications) || notifications.length === 0) {
         return <div className="p-4 text-center text-gray-500 text-sm">No notifications</div>;
     }
 
