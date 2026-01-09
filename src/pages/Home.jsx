@@ -47,11 +47,11 @@ const Home = () => {
                 if (response.data.registrationDeadline) {
                     setDeadline(new Date(response.data.registrationDeadline));
                 } else {
-                    setDeadline(new Date("2025-12-25"));
+                    setDeadline(new Date("yyyy-MM-dd")); // Set a future default date
                 }
             } catch (error) {
                 console.error("Failed to fetch settings", error);
-                setDeadline(new Date("2025-12-25"));
+                setDeadline(new Date("yyyy-MM-dd")); // Set a future default date
             } finally {
                 setDeadlineLoading(false);
             }
@@ -125,7 +125,11 @@ const Home = () => {
             }
             if (isNaN(eventDate.getTime())) return false; // Invalid date
 
-            return eventDate >= today;
+            // Reset time part for accurate date-only comparison
+            const eventDateOnly = new Date(eventDate);
+            eventDateOnly.setHours(0, 0, 0, 0);
+
+            return eventDateOnly >= today;
         });
     }, [events, today]);
 
