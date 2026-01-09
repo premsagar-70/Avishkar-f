@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { doc, getDocFromServer } from 'firebase/firestore'; // Using getDocFromServer to bypass cache
+import { doc, getDocFromServer } from 'firebase/firestore';
 import { auth, db } from '../../firebase';
 import { useAuth } from '../../context/AuthContext';
 import { Mail, Lock, ArrowRight, ArrowLeft, Quote, Eye, EyeOff } from 'lucide-react';
@@ -15,7 +15,9 @@ const Login = () => {
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
     const location = useLocation();
-    const from = location.state?.from?.pathname || null;
+
+    // Safety check: ensure 'from' is not the login page itself
+    const from = location.state?.from?.pathname === '/login' ? '/dashboard' : (location.state?.from?.pathname || '/dashboard');
     const showModalOnReturn = location.state?.showModalOnReturn || false;
     const { signInWithGoogle } = useAuth();
 
@@ -29,8 +31,8 @@ const Login = () => {
     const getRedirectPath = (role, fromPath) => {
         if (role === 'admin') return '/admin';
         if (role === 'organizer') return '/organizer';
-        if (fromPath) return fromPath;
-        return '/events';
+        // If fromPath is valid and not root, use it; otherwise dashboard
+        return (fromPath && fromPath !== '/') ? fromPath : '/dashboard';
     };
 
     const handleEmailLogin = async (e) => {
@@ -40,45 +42,30 @@ const Login = () => {
             const userCredential = await signInWithEmailAndPassword(auth, email, password);
             const user = userCredential.user;
 
-            // Strict Server Fetch
+            // We fetch here just to know where to redirect immediately
             const userDoc = await getDocFromServer(doc(db, "users", user.uid));
 
             toast.success("Welcome back!");
 
             if (userDoc.exists()) {
                 const userData = userDoc.data();
-
-                // DATA CLEANUP: Normalize role string
                 let role = (userData.role || 'participant').toLowerCase().trim();
                 if (role === 'conductor') role = 'organizer';
 
-                // --- EMERGENCY FIX: FORCE ADMIN ROLE for specific email ---
-                // if (user.email === 'admin@aviskhar.com') {
-                //     console.warn("Login: Applying Admin Override for admin@aviskhar.com");
-                //     role = 'admin';
-                // }
-                // -------------------------------------------------------------
+                // Clear any refresh flags
+                sessionStorage.removeItem('dashboard_refreshed');
 
-                console.log(`LOGIN DEBUG: User=${user.email}, RawRole=${userData.role}, Normalized=${role}`);
+                const targetPath = getRedirectPath(role, from);
 
-                // Specific Check for known Admin issue (Only if we didn't just fix it above)
-                if (user.email === 'admin@aviskhar.com' && role !== 'admin') {
-                    if (user.email === 'admin@aviskhar.com' && role !== 'admin') {
-                        console.error("CRITICAL ADMIN ROLE MISSING. Database role:", role);
-                        toast.error("Account Error: Admin role not found in database. Please contact support.");
-                        // Do NOT redirect to admin to avoid loop, let them fall through to default view
-                    }
-
-                    const targetPath = getRedirectPath(role, from);
-                    if (from && targetPath === from) {
-                        navigate(from, { state: { showModalOnReturn } });
-                    } else {
-                        navigate(targetPath);
-                    }
-
+                // Navigate - The AuthContext will handle the loading state on the destination page
+                if (from && targetPath === from) {
+                    navigate(from, { state: { showModalOnReturn }, replace: true });
                 } else {
-                    navigate('/dashboard');
+                    navigate(targetPath, { replace: true });
                 }
+            } else {
+                // Fallback if doc doesn't exist yet (rare)
+                navigate('/dashboard', { replace: true });
             }
         } catch (err) {
             console.error(err);
@@ -90,10 +77,9 @@ const Login = () => {
 
     const handleGoogleLogin = async () => {
         try {
-            // Use AuthContext method which handles the popup
             const user = await signInWithGoogle();
 
-            // Re-fetch strictly to be sure of role
+            // Re-fetch strictly to be sure of role for redirection
             const userDoc = await getDocFromServer(doc(db, "users", user.uid));
 
             toast.success("Signed in with Google!");
@@ -104,9 +90,9 @@ const Login = () => {
                 if (role === 'conductor') role = 'organizer';
 
                 const targetPath = getRedirectPath(role, from);
-                navigate(targetPath);
+                navigate(targetPath, { replace: true });
             } else {
-                navigate(from || '/events');
+                navigate(from, { replace: true });
             }
 
         } catch (error) {

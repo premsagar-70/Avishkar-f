@@ -6,9 +6,9 @@ import { X, QrCode } from 'lucide-react';
 import QRCode from 'react-qr-code';
 
 const Dashboard = () => {
-    const { currentUser, userRole } = useAuth();
+    const { currentUser, userRole, loading: authLoading } = useAuth(); // Renamed to authLoading to avoid conflict
     const [events, setEvents] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const [dataLoading, setDataLoading] = useState(true); // Renamed for clarity
 
     const [myRegistrations, setMyRegistrations] = useState([]);
     const [showQRModal, setShowQRModal] = useState(false);
@@ -23,7 +23,7 @@ const Dashboard = () => {
         } catch (error) {
             console.error("Failed to fetch events", error);
         } finally {
-            setLoading(false);
+            setDataLoading(false);
         }
     };
 
@@ -45,21 +45,27 @@ const Dashboard = () => {
         }
     }, [currentUser, userRole]);
 
+    // Redirect Logic - Only runs after Auth is done loading
+    useEffect(() => {
+        if (authLoading) return;
+
+        if (userRole === 'admin') {
+            navigate('/admin', { replace: true });
+        } else if (userRole === 'organizer') {
+            navigate('/organizer', { replace: true });
+        } else if (currentUser?.organizerRequest && userRole !== 'organizer') {
+            navigate('/pending-approval', { replace: true });
+        }
+    }, [userRole, currentUser, authLoading, navigate]);
+
     const handleRegister = (eventId) => {
         navigate(`/events/${eventId}`);
     };
 
     const handleShowQR = (event) => {
-        // Find registration for this event
-        // Note: Assuming myRegistrations contains eventId or we can match by title/date if needed.
-        // Ideally the registration object has the eventId.
-        // If not, we might need to rely on the backend response structure.
-        // Let's assume we can construct the QR data: { registrationId: ..., userId: ... }
-        // For now, let's look for the registration object.
-        const registration = myRegistrations.find(r => r.eventTitle === event.title); // Fallback matching if eventId missing
+        const registration = myRegistrations.find(r => r.eventTitle === event.title);
 
         if (registration) {
-            // The QR code should ideally contain the registration ID for the scanner to verify.
             setSelectedQRData(JSON.stringify({
                 registrationId: registration.id,
                 userId: currentUser.uid,
@@ -68,9 +74,6 @@ const Dashboard = () => {
             setSelectedEventTitle(event.title);
             setShowQRModal(true);
         } else {
-            // Fallback if we can't find the specific registration object but we know they are registered
-            // This might happen if the data structure is different.
-            // We'll just encode the user and event ID.
             setSelectedQRData(JSON.stringify({
                 userId: currentUser.uid,
                 eventId: event.id
@@ -80,35 +83,23 @@ const Dashboard = () => {
         }
     };
 
-    const isRegistered = (eventId) => {
-        // Check if any registration matches this event ID
-        // Assuming registration object has 'eventId' field. If not, we might need to check titles.
-        // Let's check both to be safe given I can't see the exact API response.
-        return myRegistrations.some(reg => reg.eventId === eventId || reg.eventTitle === events.find(e => e.id === eventId)?.title);
-    };
+    const isRedirectingUser = !authLoading && (userRole === 'admin' || userRole === 'organizer' || (currentUser?.organizerRequest && userRole !== 'organizer'));
 
-    if (!currentUser) {
+    if (!currentUser && !authLoading) {
         return <div className="p-8 text-center">Please log in to view the dashboard.</div>;
     }
 
-    // Redirect Admin/Organizer
-    if (userRole === 'admin') {
-        const timer = setTimeout(() => navigate('/admin'), 100);
-        return () => clearTimeout(timer);
+    // Combine loading states: Wait for Auth OR Data
+    if (authLoading || dataLoading || isRedirectingUser) {
+        return (
+            <div className="flex flex-col justify-center items-center min-h-screen bg-gray-50">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mb-4"></div>
+                <div className="text-lg font-medium text-gray-600">
+                    {authLoading ? "Verifying Access..." : isRedirectingUser ? "Redirecting..." : "Loading Events..."}
+                </div>
+            </div>
+        );
     }
-    if (userRole === 'organizer') {
-        const timer = setTimeout(() => navigate('/organizer'), 100);
-        return () => clearTimeout(timer);
-    }
-
-    // Redirect Pending Approval
-    if (currentUser?.organizerRequest && userRole !== 'organizer') {
-        const timer = setTimeout(() => navigate('/pending-approval'), 100);
-        return () => clearTimeout(timer);
-    }
-
-    // If we are redirecting, return null or a loader?
-    if (userRole === 'admin' || userRole === 'organizer') return <div className="p-8 text-center">Redirecting...</div>;
 
     return (
         <div className="min-h-screen bg-gray-100 py-8 px-4 sm:px-6 lg:px-8">
@@ -122,7 +113,7 @@ const Dashboard = () => {
                     </div>
                 </div>
 
-                {/* My Registrations Section - Only show if there are registrations */}
+                {/* My Registrations Section */}
                 {myRegistrations.length > 0 && (
                     <div className="mb-12">
                         <h2 className="text-2xl font-bold mb-6">My Registered Events</h2>
@@ -158,16 +149,12 @@ const Dashboard = () => {
                 {/* Events List */}
                 <div>
                     <h2 className="text-2xl font-bold mb-6">Upcoming Events</h2>
-                    {loading ? (
-                        <p>Loading events...</p>
-                    ) : events.length === 0 ? (
+                    {events.length === 0 ? (
                         <p className="text-gray-500">No events found.</p>
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {Array.isArray(events) && events
                                 .filter(event => {
-                                    // Filter out completed events (past date)
-                                    // Handle Firestore Timestamp or String
                                     let eventDate;
                                     if (event.date && typeof event.date.toDate === 'function') {
                                         eventDate = event.date.toDate();
@@ -176,9 +163,8 @@ const Dashboard = () => {
                                     }
 
                                     const today = new Date();
-                                    today.setHours(0, 0, 0, 0); // Reset time to start of day for accurate comparison
+                                    today.setHours(0, 0, 0, 0);
 
-                                    // If invalid date, keep it safe (or hide it? Let's hide invalid dates to avoid glitches)
                                     if (isNaN(eventDate.getTime())) return false;
 
                                     return eventDate >= today;

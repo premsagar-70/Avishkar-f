@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { auth, db, googleProvider } from '../firebase';
 import { onAuthStateChanged, signInWithPopup } from 'firebase/auth';
-import { doc, getDoc, setDoc, getDocFromServer } from 'firebase/firestore';
+import { doc, setDoc, getDocFromServer, onSnapshot } from 'firebase/firestore';
 
 const AuthContext = createContext();
 
@@ -16,27 +16,22 @@ export const AuthProvider = ({ children }) => {
         try {
             const result = await signInWithPopup(auth, googleProvider);
             const user = result.user;
-
-            // Check if user exists in Firestore, if not create them
             const userDocRef = doc(db, "users", user.uid);
 
-            // Use Server fetch for initial strict check
+            // Check if user exists
             const userDoc = await getDocFromServer(userDocRef);
 
             if (!userDoc.exists()) {
                 await setDoc(userDocRef, {
                     email: user.email,
-                    role: 'participant', // Default role
+                    role: 'participant',
                     createdAt: new Date().toISOString(),
                     displayName: user.displayName,
                     photoURL: user.photoURL
                 });
                 setUserRole('participant');
-            } else {
-                const userData = userDoc.data();
-                const role = (userData.role || 'participant').toLowerCase().trim();
-                setUserRole(role === 'conductor' ? 'organizer' : role);
             }
+            // If they exist, the onSnapshot listener below will handle the role update automatically
             return user;
         } catch (error) {
             console.error("Google Sign In Error:", error);
@@ -45,49 +40,53 @@ export const AuthProvider = ({ children }) => {
     };
 
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, async (user) => {
+        let unsubscribeSnapshot = null;
+
+        const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
             if (user) {
                 setCurrentUser(user);
-                // Fetch user role from Firestore
-                try {
-                    // Force server fetch to avoid stale role cache
-                    const userDoc = await getDocFromServer(doc(db, "users", user.uid));
-                    if (userDoc.exists()) {
-                        const userData = userDoc.data();
+                setLoading(true); // START LOADING immediately when user is found
 
-                        // Robust role normalization
+                // Subscribe to real-time updates for the user's role
+                const userDocRef = doc(db, "users", user.uid);
+                unsubscribeSnapshot = onSnapshot(userDocRef, (docSnap) => {
+                    if (docSnap.exists()) {
+                        const userData = docSnap.data();
+
+                        // Normalize role
                         let role = (userData.role || 'participant').toLowerCase().trim();
                         if (role === 'conductor') role = 'organizer';
 
-                        // --- EMERGENCY FIX: FORCE ADMIN ROLE for specific email ---
-                        // The database record for this email is missing the 'role' field.
-                        // We strictly override it here to ensure access.
-                        if (user.email === 'admin@aviskhar.com') {
-                            console.warn("Applying Admin Override for admin@aviskhar.com");
-                            role = 'admin';
-                        }
-                        // -------------------------------------------------------------
-
                         setUserRole(role);
-                        // Attach custom data to currentUser object or separate state
+
+                        // Attach custom data
                         user.organizerRequest = userData.organizerRequest || userData.conductorRequest;
                     } else {
-                        // Default role or handle new user
                         setUserRole('participant');
                     }
-                } catch (error) {
-                    console.error("Error fetching user role:", error);
-                    // In error case, default to participant safely
+                    setLoading(false); // STOP LOADING once data is ready
+                }, (error) => {
+                    console.error("Error fetching user data:", error);
                     setUserRole('participant');
-                }
+                    setLoading(false);
+                });
+
             } else {
+                // User logged out
+                if (unsubscribeSnapshot) {
+                    unsubscribeSnapshot();
+                    unsubscribeSnapshot = null;
+                }
                 setCurrentUser(null);
                 setUserRole(null);
+                setLoading(false);
             }
-            setLoading(false);
         });
 
-        return unsubscribe;
+        return () => {
+            unsubscribeAuth();
+            if (unsubscribeSnapshot) unsubscribeSnapshot();
+        };
     }, []);
 
     const value = {
@@ -99,7 +98,7 @@ export const AuthProvider = ({ children }) => {
 
     return (
         <AuthContext.Provider value={value}>
-            {!loading && children}
+            {children}
         </AuthContext.Provider>
     );
 };
